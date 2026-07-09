@@ -1,0 +1,39 @@
+{{define "query.html"}}{{template "header" .}}
+  <div class="page-head">
+    <h1>SQL Console <span class="muted small">{{if .Database}}· {{.Database}}{{end}}</span></h1>
+  </div>
+
+  <form method="post" action="/query" class="query-form">
+    <input type="hidden" name="db" value="{{.Database}}">
+    <textarea name="sql" rows="6" spellcheck="false" placeholder="SELECT * FROM ...">{{.SQL}}</textarea>
+    <div class="query-actions">
+      <button type="submit" class="btn primary">Run</button>
+      <span class="muted small">Runs against <strong>{{if .Database}}{{.Database}}{{else}}the admin database{{end}}</strong></span>
+    </div>
+  </form>
+
+  {{if .QueryError}}
+  <div class="error-box">
+    <strong>Query error</strong>
+    <pre>{{.QueryError}}</pre>
+  </div>
+  {{end}}
+
+  {{with .Result}}
+  <p class="muted small">{{.RowCount}} row(s)</p>
+  <div class="scroll">
+    <table class="grid data">
+      <thead>
+        <tr>{{range .Columns}}<th>{{.}}</th>{{end}}</tr>
+      </thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>{{range .}}<td class="mono">{{.}}</td>{{end}}</tr>
+        {{else}}
+        <tr><td class="muted">No rows returned.</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{end}}
+{{template "footer" .}}{{end}}

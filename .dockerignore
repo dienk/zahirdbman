@@ -1,0 +1,16 @@
+# Build artifacts
+bin/
+zahirdbman
+*.exe
+
+# Local env & secrets
+.env
+
+# VCS / OS / editor
+.git/
+.gitignore
+.DS_Store
+
+# Docs & meta (not needed in the image)
+README.md
+Makefile

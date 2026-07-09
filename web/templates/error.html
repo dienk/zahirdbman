@@ -1,0 +1,7 @@
+{{define "error.html"}}{{template "header" .}}
+  <div class="error-box">
+    <h1>{{.Message}}</h1>
+    <pre>{{.Detail}}</pre>
+    <a href="/" class="btn">← Back to databases</a>
+  </div>
+{{template "footer" .}}{{end}}

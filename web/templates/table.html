@@ -1,0 +1,42 @@
+{{define "table.html"}}{{template "header" .}}
+  <div class="page-head">
+    <h1><span class="muted">{{.Schema}}.</span>{{.Table}}</h1>
+    <a href="/query?db={{.Database}}" class="btn">Query this DB</a>
+  </div>
+
+  <h2>Columns</h2>
+  <table class="grid">
+    <thead>
+      <tr><th>Column</th><th>Type</th><th>Nullable</th><th>Default</th></tr>
+    </thead>
+    <tbody>
+      {{range .Columns}}
+      <tr>
+        <td class="strong mono">{{.Name}}</td>
+        <td class="mono">{{.Type}}</td>
+        <td>{{if .Nullable}}<span class="muted">yes</span>{{else}}<span class="tag">NOT NULL</span>{{end}}</td>
+        <td class="mono muted">{{.Default}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+
+  <h2>Data preview <span class="muted small">(first {{.Limit}} rows)</span></h2>
+  {{with .Preview}}
+  <div class="scroll">
+    <table class="grid data">
+      <thead>
+        <tr>{{range .Columns}}<th>{{.}}</th>{{end}}</tr>
+      </thead>
+      <tbody>
+        {{range .Rows}}
+        <tr>{{range .}}<td class="mono">{{.}}</td>{{end}}</tr>
+        {{else}}
+        <tr><td class="muted">No rows.</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  <p class="muted small">{{.RowCount}} row(s) shown</p>
+  {{end}}
+{{template "footer" .}}{{end}}

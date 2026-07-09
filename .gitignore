@@ -1,0 +1,14 @@
+# Binaries
+/bin/
+/zahirdbman
+*.exe
+
+# Env
+.env
+
+# OS
+.DS_Store
+
+# Go
+*.test
+*.out

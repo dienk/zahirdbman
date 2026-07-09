@@ -1,0 +1,26 @@
+{{define "header"}}<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}} · zahirdbman</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">zahir<span>dbman</span></a>
+    <nav>
+      <a href="/">Databases</a>
+      {{if .Database}}<a href="/db?name={{.Database}}">{{.Database}}</a>
+      <a href="/query?db={{.Database}}">SQL Console</a>{{end}}
+    </nav>
+  </header>
+  <main class="container">
+{{end}}
+
+{{define "footer"}}
+  </main>
+  <footer class="foot">zahirdbman · PostgreSQL manager</footer>
+</body>
+</html>
+{{end}}

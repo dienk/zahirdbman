@@ -1,0 +1,38 @@
+{{define "index.html"}}{{template "header" .}}
+  {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+  <div class="page-head">
+    <h1>Databases</h1>
+    <details class="create">
+      <summary class="btn">+ New database</summary>
+      <form method="post" action="/create" class="inline-form">
+        <input type="text" name="name" placeholder="database_name" pattern="[A-Za-z0-9_]+" required>
+        <button type="submit" class="btn primary">Create</button>
+      </form>
+    </details>
+  </div>
+
+  {{if .Version}}<p class="muted mono small">{{.Version}}</p>{{end}}
+
+  <table class="grid">
+    <thead>
+      <tr><th>Name</th><th>Owner</th><th class="num">Size</th><th></th></tr>
+    </thead>
+    <tbody>
+      {{range .Databases}}
+      <tr>
+        <td><a href="/db?name={{.Name}}" class="strong">{{.Name}}</a></td>
+        <td class="muted">{{.Owner}}</td>
+        <td class="num mono">{{.Size}}</td>
+        <td class="actions">
+          <form method="post" action="/drop" onsubmit="return confirm('Drop database {{.Name}}? This cannot be undone.');">
+            <input type="hidden" name="name" value="{{.Name}}">
+            <button type="submit" class="btn danger small">Drop</button>
+          </form>
+        </td>
+      </tr>
+      {{else}}
+      <tr><td colspan="4" class="muted">No databases found.</td></tr>
+      {{end}}
+    </tbody>
+  </table>
+{{template "footer" .}}{{end}}

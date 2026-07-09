@@ -1,0 +1,27 @@
+{{define "database.html"}}{{template "header" .}}
+  <div class="page-head">
+    <h1>{{.Database}}</h1>
+    <a href="/query?db={{.Database}}" class="btn">SQL Console</a>
+  </div>
+
+  {{if .Tables}}
+  <table class="grid">
+    <thead>
+      <tr><th>Schema</th><th>Table</th><th>Type</th><th class="num">Est. rows</th><th class="num">Size</th></tr>
+    </thead>
+    <tbody>
+      {{range .Tables}}
+      <tr>
+        <td class="muted">{{.Schema}}</td>
+        <td><a href="/table?db={{$.Database}}&schema={{.Schema}}&name={{.Name}}" class="strong">{{.Name}}</a></td>
+        <td><span class="tag">{{.Kind}}</span></td>
+        <td class="num mono">{{.Rows}}</td>
+        <td class="num mono">{{.Size}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="muted">No user tables or views in this database.</p>
+  {{end}}
+{{template "footer" .}}{{end}}
