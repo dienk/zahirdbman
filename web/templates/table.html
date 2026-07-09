@@ -5,6 +5,7 @@
   </div>
 
   <h2>Columns</h2>
+  <div class="scroll">
   <table class="grid">
     <thead>
       <tr><th>Column</th><th>Type</th><th>Nullable</th><th>Default</th></tr>
@@ -15,11 +16,12 @@
         <td class="strong mono">{{.Name}}</td>
         <td class="mono">{{.Type}}</td>
         <td>{{if .Nullable}}<span class="muted">yes</span>{{else}}<span class="tag">NOT NULL</span>{{end}}</td>
-        <td class="mono muted">{{.Default}}</td>
+        <td class="mono muted">{{if .Default}}{{.Default}}{{else}}—{{end}}</td>
       </tr>
       {{end}}
     </tbody>
   </table>
+  </div>
 
   <h2>Data preview <span class="muted small">(first {{.Limit}} rows)</span></h2>
   {{with .Preview}}

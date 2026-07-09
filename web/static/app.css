@@ -108,7 +108,7 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible {
   padding: 0 1.75rem;
   position: sticky; top: 0; z-index: 10;
 }
-.page-title { font-weight: 700; font-size: 1.05rem; color: var(--ink); }
+.page-title { font-weight: 700; font-size: 1.05rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .avatar {
   width: 36px; height: 36px; border-radius: 50%;
   background: var(--sidebar-active); color: #fff;
@@ -262,7 +262,8 @@ code { font-family: var(--mono); font-size: 0.85em; background: var(--tag-bg); c
 .server-k { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; }
 .server-v { font-size: 0.9rem; font-weight: 600; }
 .server-full {
-  flex-basis: 100%; margin-top: 0.25rem; padding-top: 0.75rem; border-top: 1px solid var(--border);
+  flex-basis: 100%; min-width: 0; max-width: 100%;
+  margin-top: 0.25rem; padding-top: 0.75rem; border-top: 1px solid var(--border);
   font-size: 0.78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
@@ -324,7 +325,7 @@ code { font-family: var(--mono); font-size: 0.85em; background: var(--tag-bg); c
 .conn-card-head { display: flex; align-items: center; justify-content: space-between; }
 .conn-name { font-weight: 700; font-size: 1.02rem; }
 .ok-tag { background: var(--ok-bg); color: var(--ok-ink); margin-left: 0.5rem; }
-.conn-meta { margin: 0.5rem 0 0.9rem; color: var(--muted); font-size: 0.85rem; }
+.conn-meta { margin: 0.5rem 0 0.9rem; color: var(--muted); font-size: 0.85rem; word-break: break-word; }
 .conn-card-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .conn-card-actions form { margin: 0; }
 .conn-form { position: sticky; top: 76px; }
@@ -352,16 +353,19 @@ code { font-family: var(--mono); font-size: 0.85em; background: var(--tag-bg); c
   .sb-toggle { display: none; }
   .app { flex-direction: column; }
   .sidebar {
-    width: 100%; flex: none; height: auto; position: static;
-    flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem 1rem;
+    width: 100%; flex: none; height: auto; position: static; overflow: visible;
+    flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0.35rem; padding: 0.6rem 0.9rem;
   }
   .brand { padding: 0.25rem 0.5rem; }
-  .side-nav { flex-direction: row; flex-wrap: wrap; gap: 0.35rem; flex: 1; }
-  .side-nav a { padding: 0.5rem 0.7rem; font-size: 0.85rem; }
+  .brand-logo { height: 28px; }
+  .side-nav { flex-direction: row; flex-wrap: wrap; gap: 0.3rem; flex: 1 1 100%; }
+  .side-nav a { padding: 0.45rem 0.65rem; font-size: 0.85rem; }
   .side-label, .side-foot { display: none; }
   .content { padding: 1.1rem; }
-  .conn-layout { grid-template-columns: 1fr; }
-  .conn-form { position: static; }
-  .conn-pill { max-width: 60vw; }
-  .conn-pill .conn-text { font-size: 0.72rem; }
+  .conn-list { grid-template-columns: 1fr; }
+  /* Compact status pill: show only the dot on small screens to avoid overflow. */
+  .conn-pill { max-width: none; padding: 0.35rem; }
+  .conn-pill .conn-text { display: none; }
+  .page-head { flex-wrap: wrap; }
+  .grid2 { grid-template-columns: 1fr; }
 }

@@ -8,7 +8,7 @@
     <textarea name="sql" rows="6" spellcheck="false" placeholder="SELECT * FROM ...">{{.SQL}}</textarea>
     <div class="query-actions">
       <button type="submit" class="btn primary">Run</button>
-      <span class="muted small">Runs against <strong>{{if .Database}}{{.Database}}{{else}}the admin database{{end}}</strong></span>
+      <span class="muted small">Tip: press ⌘/Ctrl + Enter to run</span>
     </div>
   </form>
 
@@ -36,4 +36,13 @@
     </table>
   </div>
   {{end}}
+  <script>
+    var qf = document.querySelector('.query-form');
+    var ta = qf && qf.querySelector('textarea');
+    if (ta) {
+      ta.addEventListener('keydown', function (e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); qf.submit(); }
+      });
+    }
+  </script>
 {{template "footer" .}}{{end}}

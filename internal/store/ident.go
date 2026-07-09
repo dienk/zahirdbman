@@ -1,6 +1,8 @@
 package store
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -33,7 +35,9 @@ func quoteIdent(name string) string {
 	return `"` + strings.ReplaceAll(name, `"`, `""`) + `"`
 }
 
-// renderValue converts a decoded pgx value into a display string.
+// renderValue converts a decoded pgx value into a display string. pgx decodes
+// many PostgreSQL types (numeric, uuid, json, arrays, ...) into pgtype structs;
+// most implement driver.Valuer, which yields a clean textual form.
 func renderValue(v any) string {
 	switch x := v.(type) {
 	case nil:
@@ -41,12 +45,31 @@ func renderValue(v any) string {
 	case string:
 		return x
 	case []byte:
+		if json.Valid(x) {
+			return string(x)
+		}
 		return fmt.Sprintf("\\x%x", x)
 	case time.Time:
 		return x.Format(time.RFC3339)
 	case fmt.Stringer:
 		return x.String()
+	case driver.Valuer:
+		val, err := x.Value()
+		if err != nil || val == nil {
+			return "NULL"
+		}
+		// Value() returns a primitive (string/int64/float64/bool/time/[]byte);
+		// recurse once to format it consistently.
+		if _, isValuer := val.(driver.Valuer); isValuer {
+			return fmt.Sprintf("%v", val) // guard against pathological recursion
+		}
+		return renderValue(val)
 	default:
+		// pgx may return maps/slices for composite/array/json types; JSON-encode
+		// them for a readable, structured representation.
+		if b, err := json.Marshal(x); err == nil {
+			return string(b)
+		}
 		return fmt.Sprintf("%v", x)
 	}
 }
