@@ -2,14 +2,27 @@
   {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
   <div class="page-head">
     <p class="muted small">{{len .Databases}} database(s){{if .Version}} · <span class="mono">{{.Version}}</span>{{end}}</p>
-    <details class="create">
-      <summary class="btn primary">+ New database</summary>
-      <form method="post" action="/create" class="inline-form">
-        <input type="text" name="name" placeholder="database_name" pattern="[A-Za-z0-9_]+" required>
-        <button type="submit" class="btn primary">Create</button>
-      </form>
-    </details>
+    <button type="button" class="btn primary" onclick="document.getElementById('db-dialog').showModal()">+ New database</button>
   </div>
+
+  <dialog id="db-dialog" class="modal">
+    <form method="post" action="/create" class="modal-card">
+      <div class="modal-head">
+        <h3>New database</h3>
+        <button type="button" class="modal-x" aria-label="Close" onclick="this.closest('dialog').close()">&times;</button>
+      </div>
+      <div class="modal-body stack">
+        <label>Database name
+          <input type="text" name="name" placeholder="database_name" pattern="[A-Za-z0-9_]+" required autofocus>
+        </label>
+        <p class="muted small">Letters, numbers and underscores only.</p>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn" onclick="this.closest('dialog').close()">Cancel</button>
+        <button type="submit" class="btn primary">Create database</button>
+      </div>
+    </form>
+  </dialog>
 
   <table class="grid">
     <thead>
