@@ -9,28 +9,35 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/app.css">
+  <script>
+    // Apply the saved sidebar state before paint to avoid a flash.
+    try { if (localStorage.getItem('zdbm-sidebar') === 'collapsed') document.documentElement.classList.add('sidebar-collapsed'); } catch (e) {}
+  </script>
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
-      <a class="brand" href="/">zahir<span>dbman</span></a>
+      <a class="brand" href="/">
+        <span class="brand-full">zahir<span>dbman</span></span>
+        <span class="brand-mini" aria-hidden="true">z</span>
+      </a>
       <nav class="side-nav">
-        <a href="/" data-match="/,/db,/table">
-          <span class="ic">&#9636;</span> Databases
+        <a href="/" data-match="/,/db,/table" title="Databases">
+          <span class="ic">&#9636;</span> <span class="label">Databases</span>
         </a>
-        <a href="/backups" data-match="/backups,/backup,/restore">
-          <span class="ic">&#8681;</span> Backup &amp; Restore
+        <a href="/backups" data-match="/backups,/backup,/restore" title="Backup &amp; Restore">
+          <span class="ic">&#8681;</span> <span class="label">Backup &amp; Restore</span>
         </a>
-        <a href="/connections" data-match="/connections">
-          <span class="ic">&#128268;</span> Connections
+        <a href="/connections" data-match="/connections" title="Connections">
+          <span class="ic">&#128268;</span> <span class="label">Connections</span>
         </a>
-        <a href="/query{{if .Database}}?db={{.Database}}{{end}}" data-match="/query">
-          <span class="ic">&#9000;</span> SQL Console
+        <a href="/query{{if .Database}}?db={{.Database}}{{end}}" data-match="/query" title="SQL Console">
+          <span class="ic">&#9000;</span> <span class="label">SQL Console</span>
         </a>
         {{if .Database}}
         <div class="side-label">Current database</div>
-        <a href="/db?name={{.Database}}" class="side-current" data-match="__none__">
-          <span class="ic">&#128451;</span> {{.Database}}
+        <a href="/db?name={{.Database}}" class="side-current" data-match="__none__" title="{{.Database}}">
+          <span class="ic">&#128451;</span> <span class="label">{{.Database}}</span>
         </a>
         {{end}}
       </nav>
@@ -39,7 +46,12 @@
 
     <div class="main-col">
       <header class="topbar">
-        <div class="page-title">{{.Title}}</div>
+        <div class="topbar-left">
+          <button class="sb-toggle" id="sb-toggle" aria-label="Toggle sidebar" title="Collapse / expand sidebar">
+            <span class="sb-bars"></span>
+          </button>
+          <div class="page-title">{{.Title}}</div>
+        </div>
         <div class="topbar-right">
           {{with .Conn}}
           <a class="conn-pill" href="/connections" title="Active connection — click to manage">
@@ -61,6 +73,15 @@
   </div>
   <script>
     (function () {
+      // Collapsible sidebar: toggle the class on <html> and persist the choice.
+      var toggle = document.getElementById('sb-toggle');
+      if (toggle) {
+        toggle.addEventListener('click', function () {
+          var collapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+          try { localStorage.setItem('zdbm-sidebar', collapsed ? 'collapsed' : 'expanded'); } catch (e) {}
+        });
+      }
+
       var p = location.pathname;
       document.querySelectorAll('.side-nav a[data-match]').forEach(function (a) {
         var active = a.getAttribute('data-match').split(',').some(function (m) {
