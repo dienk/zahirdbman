@@ -1,7 +1,11 @@
 {{define "error.html"}}{{template "header" .}}
-  <div class="error-box">
-    <h1>{{.Message}}</h1>
-    <pre>{{.Detail}}</pre>
-    <a href="/" class="btn">← Back to databases</a>
+  <div class="empty-state is-error">
+    <div class="empty-ic">!</div>
+    <h2>{{.Message}}</h2>
+    {{if .Detail}}<pre class="empty-detail">{{.Detail}}</pre>{{end}}
+    <div class="empty-actions">
+      <a href="/" class="btn primary">← Back to databases</a>
+      <a href="/connections" class="btn">Check connection</a>
+    </div>
   </div>
 {{template "footer" .}}{{end}}

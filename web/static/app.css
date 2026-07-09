@@ -31,6 +31,24 @@ body {
   color: var(--ink);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: rgba(36, 121, 174, 0.2); color: var(--ink); }
+
+/* Slim, on-brand scrollbars for the content area and scroll containers. */
+.content *::-webkit-scrollbar, .scroll::-webkit-scrollbar { height: 10px; width: 10px; }
+.content *::-webkit-scrollbar-thumb, .scroll::-webkit-scrollbar-thumb {
+  background: #C7D3E0; border-radius: 999px; border: 2px solid transparent; background-clip: content-box;
+}
+.content *::-webkit-scrollbar-thumb:hover, .scroll::-webkit-scrollbar-thumb:hover { background: #A9B9CC; background-clip: content-box; }
+
+/* Consistent keyboard focus ring across interactive elements. */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 /* ---- App shell ---- */
@@ -160,6 +178,9 @@ table.data td { white-space: nowrap; max-width: 340px; overflow: hidden; text-ov
 .btn.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }
 .btn.danger:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
 .btn.small { padding: 0.3rem 0.7rem; font-size: 0.78rem; border-radius: 8px; }
+.btn:active { transform: translateY(1px); }
+.btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+.btn[disabled]:active { transform: none; }
 
 /* ---- Create-db inline form ---- */
 details.create summary { list-style: none; }
@@ -206,6 +227,25 @@ details.create summary::-webkit-details-marker { display: none; }
 .chk { flex-direction: row !important; align-items: center; gap: 0.5rem; font-weight: 400; color: var(--muted); }
 .chk input { width: auto; }
 code { font-family: var(--mono); font-size: 0.85em; background: var(--tag-bg); color: var(--tag-ink); padding: 0.05rem 0.35rem; border-radius: 5px; }
+
+/* ---- Empty / error state ---- */
+.empty-state {
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--card-radius);
+  padding: 3rem 2rem; text-align: center; max-width: 620px; margin: 1rem auto;
+  display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+}
+.empty-state h2 { margin: 0; }
+.empty-ic {
+  width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 1.6rem; font-weight: 800; background: var(--tag-bg); color: var(--accent-dark);
+}
+.empty-state.is-error .empty-ic { background: color-mix(in srgb, var(--danger) 15%, #fff); color: var(--danger); }
+.empty-detail {
+  width: 100%; text-align: left; overflow-x: auto; white-space: pre-wrap;
+  font-family: var(--mono); font-size: 0.82rem; color: var(--muted);
+  background: var(--content-bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 1rem; margin: 0.25rem 0;
+}
+.empty-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center; margin-top: 0.5rem; }
 
 /* ---- Connections page ---- */
 .conn-layout { display: grid; grid-template-columns: 1fr 380px; gap: 1.5rem; align-items: start; }
