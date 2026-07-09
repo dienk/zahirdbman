@@ -6,7 +6,9 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -129,6 +131,32 @@ func (m *Manager) ServerVersion(ctx context.Context) (string, error) {
 	var v string
 	err = p.QueryRow(ctx, "SELECT version()").Scan(&v)
 	return v, err
+}
+
+// ServerInfo holds descriptive facts about the connected server.
+type ServerInfo struct {
+	Full      string    // the raw version() string
+	Version   string    // short version, e.g. "14.20"
+	StartedAt time.Time // postmaster start time
+}
+
+// ServerInfo returns version and uptime details for the connected server.
+func (m *Manager) ServerInfo(ctx context.Context) (ServerInfo, error) {
+	p, err := m.pool(ctx, m.admin())
+	if err != nil {
+		return ServerInfo{}, err
+	}
+	var info ServerInfo
+	err = p.QueryRow(ctx, "SELECT version(), pg_postmaster_start_time()").
+		Scan(&info.Full, &info.StartedAt)
+	if err != nil {
+		return ServerInfo{}, err
+	}
+	// version() looks like "PostgreSQL 14.20 (Homebrew) on ...".
+	if f := strings.Fields(info.Full); len(f) >= 2 && f[0] == "PostgreSQL" {
+		info.Version = f[1]
+	}
+	return info, nil
 }
 
 // Database describes a single database and its size.

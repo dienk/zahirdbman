@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/zahir/zahirdbman/internal/backup"
@@ -85,18 +86,50 @@ func (h *Handler) index(w http.ResponseWriter, r *http.Request) {
 	c, cancel := ctx(r)
 	defer cancel()
 
-	version, _ := h.mgr.ServerVersion(c)
+	info, _ := h.mgr.ServerInfo(c)
 	dbs, err := h.mgr.ListDatabases(c)
 	if err != nil {
 		h.renderError(w, "Could not list databases", err)
 		return
 	}
+	server := map[string]any{
+		"Version": info.Version,
+		"Full":    info.Full,
+	}
+	if !info.StartedAt.IsZero() {
+		server["StartedAt"] = info.StartedAt.Format("2006-01-02 15:04")
+		server["Uptime"] = humanizeDuration(time.Since(info.StartedAt))
+	}
 	h.render(w, "index.html", map[string]any{
 		"Title":     "Databases",
-		"Version":   version,
+		"Server":    server,
 		"Databases": dbs,
 		"Flash":     r.URL.Query().Get("flash"),
 	})
+}
+
+// humanizeDuration renders a duration as a compact "Nd Nh Nm" string.
+func humanizeDuration(d time.Duration) string {
+	if d < time.Minute {
+		return "just started"
+	}
+	days := int(d.Hours()) / 24
+	hours := int(d.Hours()) % 24
+	mins := int(d.Minutes()) % 60
+	parts := make([]string, 0, 3)
+	if days > 0 {
+		parts = append(parts, strconv.Itoa(days)+"d")
+	}
+	if hours > 0 {
+		parts = append(parts, strconv.Itoa(hours)+"h")
+	}
+	if mins > 0 && days == 0 {
+		parts = append(parts, strconv.Itoa(mins)+"m")
+	}
+	if len(parts) == 0 {
+		return "just started"
+	}
+	return strings.Join(parts, " ")
 }
 
 // database lists the tables within one database.

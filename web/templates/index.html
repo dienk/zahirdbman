@@ -1,7 +1,26 @@
 {{define "index.html"}}{{template "header" .}}
   {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+
+  {{with .Server}}
+  <div class="server-info">
+    <div class="server-badge">
+      <span class="server-badge-ic">&#128024;</span>
+      <div>
+        <div class="muted small">PostgreSQL</div>
+        <div class="server-ver">{{if .Version}}{{.Version}}{{else}}unknown{{end}}</div>
+      </div>
+    </div>
+    <div class="server-facts">
+      {{with $.Conn}}<div><span class="server-k">Server</span><span class="server-v mono">{{.User}}@{{.Host}}:{{.Port}}</span></div>{{end}}
+      {{if .Uptime}}<div><span class="server-k">Uptime</span><span class="server-v">{{.Uptime}}</span></div>{{end}}
+      {{if .StartedAt}}<div><span class="server-k">Started</span><span class="server-v mono">{{.StartedAt}}</span></div>{{end}}
+    </div>
+    {{if .Full}}<div class="server-full mono" title="{{.Full}}">{{.Full}}</div>{{end}}
+  </div>
+  {{end}}
+
   <div class="page-head">
-    <p class="muted small">{{len .Databases}} database(s){{if .Version}} · <span class="mono">{{.Version}}</span>{{end}}</p>
+    <p class="muted small">{{len .Databases}} database(s)</p>
     <button type="button" class="btn primary" onclick="document.getElementById('db-dialog').showModal()">+ New database</button>
   </div>
 
