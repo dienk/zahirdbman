@@ -1,6 +1,6 @@
 {{define "query.html"}}{{template "header" .}}
   <div class="page-head">
-    <h1>SQL Console <span class="muted small">{{if .Database}}· {{.Database}}{{end}}</span></h1>
+    <p class="muted small">Running against <strong>{{if .Database}}{{.Database}}{{else}}the admin database{{end}}</strong></p>
   </div>
 
   <form method="post" action="/query" class="query-form">

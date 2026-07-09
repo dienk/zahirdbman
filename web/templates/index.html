@@ -1,17 +1,15 @@
 {{define "index.html"}}{{template "header" .}}
   {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
   <div class="page-head">
-    <h1>Databases</h1>
+    <p class="muted small">{{len .Databases}} database(s){{if .Version}} · <span class="mono">{{.Version}}</span>{{end}}</p>
     <details class="create">
-      <summary class="btn">+ New database</summary>
+      <summary class="btn primary">+ New database</summary>
       <form method="post" action="/create" class="inline-form">
         <input type="text" name="name" placeholder="database_name" pattern="[A-Za-z0-9_]+" required>
         <button type="submit" class="btn primary">Create</button>
       </form>
     </details>
   </div>
-
-  {{if .Version}}<p class="muted mono small">{{.Version}}</p>{{end}}
 
   <table class="grid">
     <thead>

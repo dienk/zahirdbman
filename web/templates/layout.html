@@ -1,27 +1,62 @@
 {{define "header"}}<!DOCTYPE html>
-<html lang="en" data-theme="auto">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{.Title}} · zahirdbman</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="/">zahir<span>dbman</span></a>
-    <nav>
-      <a href="/">Databases</a>
-      <a href="/backups">Backup &amp; Restore</a>
-      {{if .Database}}<a href="/db?name={{.Database}}">{{.Database}}</a>
-      <a href="/query?db={{.Database}}">SQL Console</a>{{end}}
-    </nav>
-  </header>
-  <main class="container">
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand" href="/">zahir<span>dbman</span></a>
+      <nav class="side-nav">
+        <a href="/" data-match="/,/db,/table">
+          <span class="ic">&#9636;</span> Databases
+        </a>
+        <a href="/backups" data-match="/backups,/backup,/restore">
+          <span class="ic">&#8681;</span> Backup &amp; Restore
+        </a>
+        <a href="/query{{if .Database}}?db={{.Database}}{{end}}" data-match="/query">
+          <span class="ic">&#9000;</span> SQL Console
+        </a>
+        {{if .Database}}
+        <div class="side-label">Current database</div>
+        <a href="/db?name={{.Database}}" class="side-current" data-match="__none__">
+          <span class="ic">&#128451;</span> {{.Database}}
+        </a>
+        {{end}}
+      </nav>
+      <div class="side-foot">PostgreSQL manager</div>
+    </aside>
+
+    <div class="main-col">
+      <header class="topbar">
+        <div class="page-title">{{.Title}}</div>
+        <div class="avatar" title="zahirdbman">Z</div>
+      </header>
+      <main class="content">
 {{end}}
 
 {{define "footer"}}
-  </main>
-  <footer class="foot">zahirdbman · PostgreSQL manager</footer>
+      </main>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var p = location.pathname;
+      document.querySelectorAll('.side-nav a[data-match]').forEach(function (a) {
+        var active = a.getAttribute('data-match').split(',').some(function (m) {
+          if (m === '__none__') return false;
+          return m === '/' ? p === '/' : p.indexOf(m) === 0;
+        });
+        if (active) a.classList.add('active');
+      });
+    })();
+  </script>
 </body>
 </html>
 {{end}}

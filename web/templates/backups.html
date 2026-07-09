@@ -1,6 +1,4 @@
 {{define "backups.html"}}{{template "header" .}}
-  <div class="page-head"><h1>Backup &amp; Restore</h1></div>
-
   {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
   {{if .RestoreErr}}<div class="error-box"><strong>Restore failed</strong><pre>{{.RestoreErr}}</pre></div>{{end}}
 
@@ -12,8 +10,8 @@
   {{end}}
 
   <div class="cards">
-    <section class="card">
-      <h2>Backup a database</h2>
+    <section class="card accent-blue">
+      <h2><span class="card-ic">&#8681;</span> Backup a database</h2>
       <p class="muted small">Runs <code>pg_dump</code> and downloads the archive to your browser.</p>
       <form method="get" action="/backup" class="stack">
         <label>Database
@@ -31,8 +29,8 @@
       </form>
     </section>
 
-    <section class="card">
-      <h2>Restore a dump</h2>
+    <section class="card accent-orange">
+      <h2><span class="card-ic">&#8679;</span> Restore a dump</h2>
       <p class="muted small">Uploads a dump and loads it via <code>pg_restore</code> or <code>psql</code>. Max 512&nbsp;MiB.</p>
       <form method="post" action="/restore" enctype="multipart/form-data" class="stack"
             onsubmit="return confirm('Restore into the target database? This can overwrite existing data.');">

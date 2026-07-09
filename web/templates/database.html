@@ -1,7 +1,7 @@
 {{define "database.html"}}{{template "header" .}}
   <div class="page-head">
-    <h1>{{.Database}}</h1>
-    <a href="/query?db={{.Database}}" class="btn">SQL Console</a>
+    <p class="muted small">{{len .Tables}} table(s) / view(s){{if .Schemas}} · schemas: {{range $i, $s := .Schemas}}{{if $i}}, {{end}}{{$s}}{{end}}{{end}}</p>
+    <a href="/query?db={{.Database}}" class="btn primary">SQL Console</a>
   </div>
 
   {{if .Tables}}
