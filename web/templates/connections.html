@@ -1,0 +1,83 @@
+{{define "connections.html"}}{{template "header" .}}
+  {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+  {{if .ConnErr}}<div class="error-box"><strong>Connection error</strong><pre>{{.ConnErr}}</pre></div>{{end}}
+
+  <div class="page-head">
+    <p class="muted small">{{len .Profiles}} saved connection profile(s). The active profile is the one the app is currently using.</p>
+  </div>
+
+  <div class="conn-layout">
+    <section class="conn-list">
+      {{range .Profiles}}
+      <div class="conn-card {{if eq .Name $.Active}}is-active{{end}}">
+        <div class="conn-card-head">
+          <div>
+            <span class="conn-name">{{.Name}}</span>
+            {{if eq .Name $.Active}}<span class="tag ok-tag">Active</span>{{end}}
+          </div>
+          <span class="conn-dot {{if eq .Name $.Active}}ok{{end}}"></span>
+        </div>
+        <div class="conn-meta mono">{{.User}}@{{.Host}}:{{.Port}}/{{.AdminDB}} <span class="muted">· sslmode={{if .SSLMode}}{{.SSLMode}}{{else}}prefer{{end}}</span></div>
+        <div class="conn-card-actions">
+          {{if ne .Name $.Active}}
+          <form method="post" action="/connections/activate">
+            <input type="hidden" name="name" value="{{.Name}}">
+            <button type="submit" class="btn primary small">Connect</button>
+          </form>
+          {{end}}
+          <a href="/connections?edit={{.Name}}" class="btn small">Edit</a>
+          <form method="post" action="/connections/delete" onsubmit="return confirm('Delete profile {{.Name}}?');">
+            <input type="hidden" name="name" value="{{.Name}}">
+            <button type="submit" class="btn danger small">Delete</button>
+          </form>
+        </div>
+      </div>
+      {{else}}
+      <p class="muted">No connection profiles yet. Add one on the right.</p>
+      {{end}}
+    </section>
+
+    <section class="card conn-form">
+      <h2>{{if .Edit.Name}}Edit “{{.Edit.Name}}”{{else}}Add connection{{end}}</h2>
+      <form method="post" action="/connections/save" class="stack">
+        <label>Profile name
+          <input type="text" name="name" value="{{.Edit.Name}}" placeholder="e.g. Production" required>
+        </label>
+        <div class="grid2">
+          <label>Host
+            <input type="text" name="host" value="{{if .Edit.Host}}{{.Edit.Host}}{{else}}localhost{{end}}" required>
+          </label>
+          <label>Port
+            <input type="text" name="port" value="{{if .Edit.Port}}{{.Edit.Port}}{{else}}5432{{end}}" required>
+          </label>
+        </div>
+        <div class="grid2">
+          <label>User
+            <input type="text" name="user" value="{{if .Edit.User}}{{.Edit.User}}{{else}}postgres{{end}}" required>
+          </label>
+          <label>Password
+            <input type="password" name="password" value="{{.Edit.Password}}" placeholder="••••••••" autocomplete="new-password">
+          </label>
+        </div>
+        <div class="grid2">
+          <label>Admin database
+            <input type="text" name="admindb" value="{{if .Edit.AdminDB}}{{.Edit.AdminDB}}{{else}}postgres{{end}}">
+          </label>
+          <label>SSL mode
+            <select name="sslmode">
+              {{$m := .Edit.SSLMode}}
+              <option value="prefer" {{if eq $m "prefer"}}selected{{end}}>prefer</option>
+              <option value="disable" {{if eq $m "disable"}}selected{{end}}>disable</option>
+              <option value="require" {{if eq $m "require"}}selected{{end}}>require</option>
+              <option value="verify-ca" {{if eq $m "verify-ca"}}selected{{end}}>verify-ca</option>
+              <option value="verify-full" {{if eq $m "verify-full"}}selected{{end}}>verify-full</option>
+            </select>
+          </label>
+        </div>
+        <label class="chk"><input type="checkbox" name="activate" checked> Connect to this profile after saving</label>
+        <button type="submit" class="btn primary">{{if .Edit.Name}}Save changes{{else}}Save &amp; connect{{end}}</button>
+      </form>
+      <p class="muted small">Passwords are stored locally in the profiles file (mode 0600). This tool has no login of its own — keep it on a trusted network.</p>
+    </section>
+  </div>
+{{template "footer" .}}{{end}}

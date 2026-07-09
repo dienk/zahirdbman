@@ -20,6 +20,9 @@
         <a href="/backups" data-match="/backups,/backup,/restore">
           <span class="ic">&#8681;</span> Backup &amp; Restore
         </a>
+        <a href="/connections" data-match="/connections">
+          <span class="ic">&#128268;</span> Connections
+        </a>
         <a href="/query{{if .Database}}?db={{.Database}}{{end}}" data-match="/query">
           <span class="ic">&#9000;</span> SQL Console
         </a>
@@ -36,7 +39,17 @@
     <div class="main-col">
       <header class="topbar">
         <div class="page-title">{{.Title}}</div>
-        <div class="avatar" title="zahirdbman">Z</div>
+        <div class="topbar-right">
+          {{with .Conn}}
+          <a class="conn-pill" href="/connections" title="Active connection — click to manage">
+            <span class="conn-dot" id="conn-dot"></span>
+            <span class="conn-text">
+              {{if .Profile}}<strong>{{.Profile}}</strong> · {{end}}{{.User}}@{{.Host}}:{{.Port}}/{{.AdminDB}}
+            </span>
+          </a>
+          {{end}}
+          <div class="avatar" title="zahirdbman">Z</div>
+        </div>
       </header>
       <main class="content">
 {{end}}
@@ -55,6 +68,18 @@
         });
         if (active) a.classList.add('active');
       });
+
+      // Live connection status: colour the header dot from /healthz.
+      var dot = document.getElementById('conn-dot');
+      if (dot) {
+        var ping = function () {
+          fetch('/healthz', { cache: 'no-store' })
+            .then(function (r) { dot.className = 'conn-dot ' + (r.ok ? 'ok' : 'down'); })
+            .catch(function () { dot.className = 'conn-dot down'; });
+        };
+        ping();
+        setInterval(ping, 10000);
+      }
     })();
   </script>
 </body>

@@ -13,20 +13,24 @@ import (
 	"time"
 
 	"github.com/zahir/zahirdbman/internal/backup"
+	"github.com/zahir/zahirdbman/internal/config"
+	"github.com/zahir/zahirdbman/internal/profile"
 	"github.com/zahir/zahirdbman/internal/store"
 )
 
 // UI holds parsed templates and the static file handler. Templates and CSS are
 // embedded so the binary is fully self-contained.
 type Handler struct {
-	mgr    *store.Manager
-	tools  *backup.Tools
-	tmpl   *template.Template
-	static http.Handler
+	mgr      *store.Manager
+	tools    *backup.Tools
+	profiles *profile.Store
+	baseCfg  config.Config
+	tmpl     *template.Template
+	static   http.Handler
 }
 
 // New builds a Handler from an embedded web filesystem rooted at "web".
-func New(mgr *store.Manager, tools *backup.Tools, webFS embed.FS) (*Handler, error) {
+func New(mgr *store.Manager, tools *backup.Tools, profiles *profile.Store, baseCfg config.Config, webFS embed.FS) (*Handler, error) {
 	tmpl, err := template.New("").Funcs(template.FuncMap{
 		"now": func() string { return time.Now().Format("2006-01-02 15:04:05") },
 	}).ParseFS(webFS, "web/templates/*.html")
@@ -38,10 +42,12 @@ func New(mgr *store.Manager, tools *backup.Tools, webFS embed.FS) (*Handler, err
 		return nil, err
 	}
 	return &Handler{
-		mgr:    mgr,
-		tools:  tools,
-		tmpl:   tmpl,
-		static: http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))),
+		mgr:      mgr,
+		tools:    tools,
+		profiles: profiles,
+		baseCfg:  baseCfg,
+		tmpl:     tmpl,
+		static:   http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))),
 	}, nil
 }
 
@@ -58,6 +64,10 @@ func (h *Handler) Routes() *http.ServeMux {
 	mux.HandleFunc("/backups", h.backupsPage)
 	mux.HandleFunc("/backup", h.backup)
 	mux.HandleFunc("/restore", h.restore)
+	mux.HandleFunc("/connections", h.connections)
+	mux.HandleFunc("/connections/save", h.connSave)
+	mux.HandleFunc("/connections/activate", h.connActivate)
+	mux.HandleFunc("/connections/delete", h.connDelete)
 	mux.HandleFunc("/healthz", h.healthz)
 	return mux
 }
@@ -312,6 +322,99 @@ func (h *Handler) restore(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/backups?flash="+urlq("Restored into "+target), http.StatusSeeOther)
 }
 
+// connections renders the connection-profiles page.
+func (h *Handler) connections(w http.ResponseWriter, r *http.Request) {
+	edit, _ := h.profiles.Get(r.URL.Query().Get("edit"))
+	h.render(w, "connections.html", map[string]any{
+		"Title":    "Connections",
+		"Profiles": h.profiles.List(),
+		"Active":   h.profiles.ActiveName(),
+		"Edit":     edit,
+		"Flash":    r.URL.Query().Get("flash"),
+		"ConnErr":  r.URL.Query().Get("err"),
+	})
+}
+
+// profileFromForm builds a profile from posted form values.
+func profileFromForm(r *http.Request) profile.Profile {
+	return profile.Profile{
+		Name:     r.FormValue("name"),
+		Host:     r.FormValue("host"),
+		Port:     r.FormValue("port"),
+		User:     r.FormValue("user"),
+		Password: r.FormValue("password"),
+		SSLMode:  r.FormValue("sslmode"),
+		AdminDB:  r.FormValue("admindb"),
+	}
+}
+
+// connSave adds or updates a profile. If "activate" is set, it also becomes the
+// active connection after a successful connectivity test.
+func (h *Handler) connSave(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/connections", http.StatusSeeOther)
+		return
+	}
+	p := profileFromForm(r)
+	if err := h.profiles.Upsert(p); err != nil {
+		http.Redirect(w, r, "/connections?err="+urlq(err.Error()), http.StatusSeeOther)
+		return
+	}
+	if r.FormValue("activate") == "on" {
+		h.activateProfile(w, r, p.Name)
+		return
+	}
+	http.Redirect(w, r, "/connections?flash="+urlq("Saved profile "+p.Name), http.StatusSeeOther)
+}
+
+// connActivate switches the active connection to the named profile.
+func (h *Handler) connActivate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/connections", http.StatusSeeOther)
+		return
+	}
+	h.activateProfile(w, r, r.FormValue("name"))
+}
+
+// activateProfile tests the profile, and on success reconfigures the manager
+// and marks it active. On failure the active connection is left unchanged.
+func (h *Handler) activateProfile(w http.ResponseWriter, r *http.Request, name string) {
+	p, ok := h.profiles.Get(name)
+	if !ok {
+		http.Redirect(w, r, "/connections?err="+urlq("profile not found: "+name), http.StatusSeeOther)
+		return
+	}
+	cfg := h.baseCfg.WithConn(p.Host, p.Port, p.User, p.Password, p.SSLMode, p.AdminDB)
+
+	c, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+	defer cancel()
+	if _, err := store.Test(c, cfg); err != nil {
+		http.Redirect(w, r, "/connections?err="+urlq("cannot connect to "+name+": "+err.Error()), http.StatusSeeOther)
+		return
+	}
+	h.mgr.Reconfigure(cfg)
+	if _, err := h.profiles.SetActive(name); err != nil {
+		http.Redirect(w, r, "/connections?err="+urlq(err.Error()), http.StatusSeeOther)
+		return
+	}
+	log.Printf("active connection switched to %q (%s:%s)", name, p.Host, p.Port)
+	http.Redirect(w, r, "/connections?flash="+urlq("Connected: "+name), http.StatusSeeOther)
+}
+
+// connDelete removes a profile.
+func (h *Handler) connDelete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/connections", http.StatusSeeOther)
+		return
+	}
+	name := r.FormValue("name")
+	if err := h.profiles.Delete(name); err != nil {
+		http.Redirect(w, r, "/connections?err="+urlq(err.Error()), http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, r, "/connections?flash="+urlq("Deleted profile "+name), http.StatusSeeOther)
+}
+
 func (h *Handler) healthz(w http.ResponseWriter, r *http.Request) {
 	c, cancel := ctx(r)
 	defer cancel()
@@ -347,6 +450,21 @@ func (d *lazyDownload) Write(p []byte) (int, error) {
 }
 
 func (h *Handler) render(w http.ResponseWriter, name string, data any) {
+	// Inject the active connection info into every page so the header can show
+	// which server is currently connected. Only map-based page data is augmented.
+	if m, ok := data.(map[string]any); ok {
+		if _, exists := m["Conn"]; !exists {
+			ci := h.mgr.ConnInfo()
+			m["Conn"] = map[string]any{
+				"Profile": h.profiles.ActiveName(),
+				"Host":    ci.Host,
+				"Port":    ci.Port,
+				"User":    ci.User,
+				"AdminDB": ci.AdminDB,
+				"SSLMode": ci.SSLMode,
+			}
+		}
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := h.tmpl.ExecuteTemplate(w, name, data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

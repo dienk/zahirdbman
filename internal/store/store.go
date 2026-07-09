@@ -27,6 +27,62 @@ func New(cfg config.Config) *Manager {
 	return &Manager{cfg: cfg, pools: make(map[string]*pgxpool.Pool)}
 }
 
+// Test opens a short-lived connection using cfg and returns the server version,
+// without touching the Manager's active connection. Used to validate a profile.
+func Test(ctx context.Context, cfg config.Config) (string, error) {
+	p, err := pgxpool.New(ctx, cfg.DSN(cfg.AdminDatabase))
+	if err != nil {
+		return "", err
+	}
+	defer p.Close()
+	var v string
+	if err := p.QueryRow(ctx, "SELECT version()").Scan(&v); err != nil {
+		return "", err
+	}
+	return v, nil
+}
+
+// ConnInfo describes the currently active connection for display.
+type ConnInfo struct {
+	Host    string
+	Port    string
+	User    string
+	AdminDB string
+	SSLMode string
+}
+
+// ConnInfo returns the active connection parameters (without the password).
+func (m *Manager) ConnInfo() ConnInfo {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return ConnInfo{
+		Host:    m.cfg.PGHost,
+		Port:    m.cfg.PGPort,
+		User:    m.cfg.PGUser,
+		AdminDB: m.cfg.AdminDatabase,
+		SSLMode: m.cfg.PGSSLMode,
+	}
+}
+
+// admin returns the active admin database name under lock.
+func (m *Manager) admin() string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.cfg.AdminDatabase
+}
+
+// Reconfigure switches the active connection: every cached pool is closed and
+// the new connection parameters take effect for subsequent operations.
+func (m *Manager) Reconfigure(cfg config.Config) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, p := range m.pools {
+		p.Close()
+	}
+	m.pools = make(map[string]*pgxpool.Pool)
+	m.cfg = cfg
+}
+
 // pool returns (creating if needed) a pool connected to the named database.
 func (m *Manager) pool(ctx context.Context, database string) (*pgxpool.Pool, error) {
 	if database == "" {
@@ -57,7 +113,7 @@ func (m *Manager) Close() {
 
 // Ping verifies the server is reachable via the admin database.
 func (m *Manager) Ping(ctx context.Context) error {
-	p, err := m.pool(ctx, m.cfg.AdminDatabase)
+	p, err := m.pool(ctx, m.admin())
 	if err != nil {
 		return err
 	}
@@ -66,7 +122,7 @@ func (m *Manager) Ping(ctx context.Context) error {
 
 // ServerVersion returns the PostgreSQL version string.
 func (m *Manager) ServerVersion(ctx context.Context) (string, error) {
-	p, err := m.pool(ctx, m.cfg.AdminDatabase)
+	p, err := m.pool(ctx, m.admin())
 	if err != nil {
 		return "", err
 	}
@@ -85,7 +141,7 @@ type Database struct {
 
 // ListDatabases returns non-template databases ordered by name.
 func (m *Manager) ListDatabases(ctx context.Context) ([]Database, error) {
-	p, err := m.pool(ctx, m.cfg.AdminDatabase)
+	p, err := m.pool(ctx, m.admin())
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +327,7 @@ func (m *Manager) CreateDatabase(ctx context.Context, name string) error {
 	if err := validateIdent(name); err != nil {
 		return err
 	}
-	p, err := m.pool(ctx, m.cfg.AdminDatabase)
+	p, err := m.pool(ctx, m.admin())
 	if err != nil {
 		return err
 	}
@@ -284,7 +340,7 @@ func (m *Manager) DropDatabase(ctx context.Context, name string) error {
 	if err := validateIdent(name); err != nil {
 		return err
 	}
-	if name == m.cfg.AdminDatabase {
+	if name == m.admin() {
 		return fmt.Errorf("refusing to drop the admin database %q", name)
 	}
 
@@ -296,7 +352,7 @@ func (m *Manager) DropDatabase(ctx context.Context, name string) error {
 	}
 	m.mu.Unlock()
 
-	p, err := m.pool(ctx, m.cfg.AdminDatabase)
+	p, err := m.pool(ctx, m.admin())
 	if err != nil {
 		return err
 	}

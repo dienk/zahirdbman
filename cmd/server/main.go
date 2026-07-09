@@ -15,6 +15,7 @@ import (
 	"github.com/zahir/zahirdbman/internal/backup"
 	"github.com/zahir/zahirdbman/internal/config"
 	"github.com/zahir/zahirdbman/internal/handler"
+	"github.com/zahir/zahirdbman/internal/profile"
 	"github.com/zahir/zahirdbman/internal/store"
 )
 
@@ -23,6 +24,30 @@ func main() {
 	log.SetPrefix("zahirdbman ")
 
 	cfg := config.Load()
+
+	// Load connection profiles. If none exist yet, seed one from the environment
+	// so the app has a working default connection out of the box.
+	profiles, err := profile.Load(cfg.ProfilesFile)
+	if err != nil {
+		log.Fatalf("load profiles: %v", err)
+	}
+	if profiles.Empty() {
+		seed := profile.Profile{
+			Name: "Default (env)", Host: cfg.PGHost, Port: cfg.PGPort,
+			User: cfg.PGUser, Password: cfg.PGPassword, SSLMode: cfg.PGSSLMode, AdminDB: cfg.AdminDatabase,
+		}
+		if err := profiles.Upsert(seed); err != nil {
+			log.Fatalf("seed default profile: %v", err)
+		}
+		log.Printf("seeded default connection profile at %s", cfg.ProfilesFile)
+	}
+
+	// Start with the active profile's connection.
+	if active, ok := profiles.Active(); ok {
+		cfg = cfg.WithConn(active.Host, active.Port, active.User, active.Password, active.SSLMode, active.AdminDB)
+		log.Printf("active connection profile: %q (%s:%s)", active.Name, active.Host, active.Port)
+	}
+
 	mgr := store.New(cfg)
 	defer mgr.Close()
 
@@ -43,7 +68,7 @@ func main() {
 		log.Printf("backup/restore limited: missing client tools %v", tools.Missing())
 	}
 
-	h, err := handler.New(mgr, tools, zahirdbman.WebFS)
+	h, err := handler.New(mgr, tools, profiles, cfg, zahirdbman.WebFS)
 	if err != nil {
 		log.Fatalf("init handler: %v", err)
 	}
