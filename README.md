@@ -89,6 +89,41 @@ docker run --rm -p 8080:8080 \
 
 The image runs as a non-root user and exposes port `8080`.
 
+## Deploy to Render
+
+This repo includes a [`render.yaml`](render.yaml) blueprint that provisions a
+managed PostgreSQL database and a Docker web service, wired together
+automatically.
+
+1. Push this repo to GitHub.
+2. In the [Render dashboard](https://dashboard.render.com): **New → Blueprint**,
+   then select this repository. Render reads `render.yaml` and creates both
+   resources.
+3. Open the web service URL when the deploy finishes.
+
+How it works:
+
+- The web service builds from the [`Dockerfile`](Dockerfile) (Alpine image with
+  the `psql` client tools, so Backup & Restore works in the cloud too).
+- The app listens on Render's `PORT` and reads `DATABASE_URL` from the managed
+  database — no manual env wiring.
+- `GET /livez` is the liveness probe (process up); `GET /healthz` additionally
+  checks the database.
+
+Notes:
+
+- **Free tier** databases expire after 30 days and free web services sleep when
+  idle — fine for trials, not production.
+- The managed database's role is not a superuser, so the built-in
+  create/drop/list-all-databases actions are limited to that one database. To
+  manage other servers, add them under **Connections** in the UI.
+- Connection profiles live in a JSON file. To persist user-added profiles
+  across deploys, switch to a paid instance and uncomment the disk block in
+  `render.yaml`.
+
+The same image runs on any Docker host (Fly.io, Railway, a VPS); set `PORT`
+and/or `DATABASE_URL` (or the individual `PG*` variables) accordingly.
+
 ## Project layout
 
 ```

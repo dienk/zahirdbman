@@ -69,6 +69,7 @@ func (h *Handler) Routes() *http.ServeMux {
 	mux.HandleFunc("/connections/save", h.connSave)
 	mux.HandleFunc("/connections/activate", h.connActivate)
 	mux.HandleFunc("/connections/delete", h.connDelete)
+	mux.HandleFunc("/livez", h.livez)
 	mux.HandleFunc("/healthz", h.healthz)
 	return mux
 }
@@ -448,6 +449,13 @@ func (h *Handler) connDelete(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/connections?flash="+urlq("Deleted profile "+name), http.StatusSeeOther)
 }
 
+// livez is a liveness probe: it reports the process is up without checking the
+// database, so a platform health check succeeds even before the DB is ready.
+func (h *Handler) livez(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("ok"))
+}
+
+// healthz is a readiness probe: it verifies the active database is reachable.
 func (h *Handler) healthz(w http.ResponseWriter, r *http.Request) {
 	c, cancel := ctx(r)
 	defer cancel()

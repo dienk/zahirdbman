@@ -1,0 +1,53 @@
+# Render Blueprint for zahirdbman
+# Spec: https://render.com/docs/blueprint-spec
+#
+# One-click-ish deploy:
+#   1. Push this repo to GitHub (already done).
+#   2. In the Render dashboard: New > Blueprint, then pick this repository.
+#   3. Render provisions the PostgreSQL database and the web service, wiring
+#      the connection automatically via DATABASE_URL.
+#
+# Notes:
+#   - The web service builds from ./Dockerfile (Alpine image with the psql
+#     client tools, so Backup & Restore works).
+#   - The app reads PORT (set by Render) and DATABASE_URL (from the database).
+#   - Free tier: the database expires after 30 days and the web service sleeps
+#     when idle. Bump plans for production (see the disk note below).
+
+databases:
+  - name: zahirdbman-db
+    databaseName: zahirdbman
+    postgresMajorVersion: "16"
+    plan: free
+
+services:
+  - type: web
+    name: zahirdbman
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /livez
+    autoDeploy: true
+    envVars:
+      # Full connection string for the managed database above.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: zahirdbman-db
+          property: connectionString
+      # Render managed PostgreSQL requires TLS.
+      - key: PGSSLMODE
+        value: require
+
+    # ---- Optional: persist connection profiles across deploys ----
+    # Connection profiles are stored in a JSON file. On the free plan the disk
+    # is ephemeral, so user-added profiles reset on redeploy (the default
+    # profile is always re-seeded from DATABASE_URL). To persist them, move to a
+    # paid instance and uncomment the disk below plus the ZDBM_PROFILES var.
+    #
+    # envVars:
+    #   - key: ZDBM_PROFILES
+    #     value: /data/profiles.json
+    # disk:
+    #   name: zahirdbman-data
+    #   mountPath: /data
+    #   sizeGB: 1
