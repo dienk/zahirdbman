@@ -69,16 +69,13 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible {
   overflow: hidden;
 }
 .brand {
-  font-weight: 700;
-  font-size: 1.35rem;
-  color: #fff;
+  display: flex;
+  align-items: center;
   text-decoration: none;
-  padding: 0.4rem 0.6rem 1.25rem;
-  letter-spacing: 0.2px;
-  white-space: nowrap;
+  padding: 0.4rem 0.6rem 1.4rem;
 }
-.brand span { color: #BFE3F5; }
-.brand-mini { display: none; }
+.brand-logo { height: 34px; width: auto; display: block; }
+.brand-mark { height: 36px; width: auto; display: none; }
 
 .side-nav { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
 .side-nav a {
@@ -291,9 +288,9 @@ code { font-family: var(--mono); font-size: 0.85em; background: var(--tag-bg); c
 /* ---- Collapsible sidebar (rail mode, desktop only) ---- */
 @media (min-width: 861px) {
   html.sidebar-collapsed .sidebar { width: 76px; flex: 0 0 76px; padding: 1.25rem 0.55rem; }
-  html.sidebar-collapsed .brand { padding: 0.4rem 0 1.1rem; text-align: center; }
-  html.sidebar-collapsed .brand-full { display: none; }
-  html.sidebar-collapsed .brand-mini { display: block; font-size: 1.6rem; text-align: center; }
+  html.sidebar-collapsed .brand { padding: 0.4rem 0 1.2rem; justify-content: center; }
+  html.sidebar-collapsed .brand-logo { display: none; }
+  html.sidebar-collapsed .brand-mark { display: block; }
   html.sidebar-collapsed .side-nav a { justify-content: center; padding: 0.7rem 0; gap: 0; }
   html.sidebar-collapsed .side-nav a .label { display: none; }
   html.sidebar-collapsed .side-nav a .ic { width: auto; font-size: 1.15rem; }
