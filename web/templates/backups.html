@@ -1,0 +1,61 @@
+{{define "backups.html"}}{{template "header" .}}
+  <div class="page-head"><h1>Backup &amp; Restore</h1></div>
+
+  {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+  {{if .RestoreErr}}<div class="error-box"><strong>Restore failed</strong><pre>{{.RestoreErr}}</pre></div>{{end}}
+
+  {{if not .Available}}
+  <div class="error-box">
+    <strong>Client tools missing:</strong> {{range .Missing}}<code>{{.}}</code> {{end}}
+    <p class="small muted">Install the PostgreSQL client tools (pg_dump, pg_restore, psql) and restart to enable this page.</p>
+  </div>
+  {{end}}
+
+  <div class="cards">
+    <section class="card">
+      <h2>Backup a database</h2>
+      <p class="muted small">Runs <code>pg_dump</code> and downloads the archive to your browser.</p>
+      <form method="get" action="/backup" class="stack">
+        <label>Database
+          <select name="db" required>
+            {{range .Databases}}<option value="{{.Name}}" {{if eq .Name $.Selected}}selected{{end}}>{{.Name}} ({{.Size}})</option>{{end}}
+          </select>
+        </label>
+        <label>Format
+          <select name="format">
+            <option value="custom">Custom (.dump) — recommended, restore with pg_restore</option>
+            <option value="plain">Plain SQL (.sql) — restore with psql</option>
+          </select>
+        </label>
+        <button type="submit" class="btn primary" {{if not .Available}}disabled{{end}}>Download backup</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Restore a dump</h2>
+      <p class="muted small">Uploads a dump and loads it via <code>pg_restore</code> or <code>psql</code>. Max 512&nbsp;MiB.</p>
+      <form method="post" action="/restore" enctype="multipart/form-data" class="stack"
+            onsubmit="return confirm('Restore into the target database? This can overwrite existing data.');">
+        <label>Dump file
+          <input type="file" name="dump" required>
+        </label>
+        <label>Format
+          <select name="format">
+            <option value="custom">Custom (.dump)</option>
+            <option value="plain">Plain SQL (.sql)</option>
+          </select>
+        </label>
+        <label>Target database
+          <input type="text" name="target" list="dblist" placeholder="database_name" pattern="[A-Za-z0-9_]+" required>
+          <datalist id="dblist">{{range .Databases}}<option value="{{.Name}}">{{end}}</datalist>
+        </label>
+        <div class="checks">
+          <label class="chk"><input type="checkbox" name="create"> Create target database first</label>
+          <label class="chk"><input type="checkbox" name="clean" checked> Clean existing objects (custom only)</label>
+          <label class="chk"><input type="checkbox" name="no_owner"> Ignore ownership (--no-owner)</label>
+        </div>
+        <button type="submit" class="btn danger" {{if not .Available}}disabled{{end}}>Restore</button>
+      </form>
+    </section>
+  </div>
+{{template "footer" .}}{{end}}

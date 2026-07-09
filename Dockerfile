@@ -19,12 +19,16 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go build -trimpath -ldflags="-s -w" -o /out/zahirdbman ./cmd/server
 
 # ---- runtime stage ----
-FROM gcr.io/distroless/static-debian12:nonroot
+# Alpine (not distroless) so the PostgreSQL client tools are available: the
+# Backup & Restore feature shells out to pg_dump / pg_restore / psql.
+FROM alpine:3.20
 
-# TLS roots come with the distroless static image, enabling sslmode=require.
+RUN apk add --no-cache postgresql16-client ca-certificates \
+ && addgroup -S app && adduser -S -G app app
+
 COPY --from=build /out/zahirdbman /usr/local/bin/zahirdbman
 
 EXPOSE 8080
-USER nonroot:nonroot
+USER app
 
 ENTRYPOINT ["/usr/local/bin/zahirdbman"]

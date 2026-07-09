@@ -12,6 +12,7 @@ import (
 	"time"
 
 	zahirdbman "github.com/zahir/zahirdbman"
+	"github.com/zahir/zahirdbman/internal/backup"
 	"github.com/zahir/zahirdbman/internal/config"
 	"github.com/zahir/zahirdbman/internal/handler"
 	"github.com/zahir/zahirdbman/internal/store"
@@ -35,7 +36,14 @@ func main() {
 	}
 	cancel()
 
-	h, err := handler.New(mgr, zahirdbman.WebFS)
+	tools := backup.New(cfg)
+	if tools.Available() {
+		log.Println("backup/restore enabled (pg_dump, pg_restore, psql found)")
+	} else {
+		log.Printf("backup/restore limited: missing client tools %v", tools.Missing())
+	}
+
+	h, err := handler.New(mgr, tools, zahirdbman.WebFS)
 	if err != nil {
 		log.Fatalf("init handler: %v", err)
 	}

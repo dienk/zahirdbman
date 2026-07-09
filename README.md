@@ -14,6 +14,11 @@ single binary with the UI (templates + CSS) embedded.
   results in a table; non-SELECT statements report their command tag.
 - **Create / drop databases** — with a confirmation guard and automatic
   termination of open sessions before a drop.
+- **Backup & Restore** — download a `pg_dump` of any database (custom `.dump`
+  or plain `.sql`), and restore an uploaded dump into a target database, with
+  options to create the target first, clean existing objects, or ignore
+  ownership. Requires the `pg_dump` / `pg_restore` / `psql` client tools on the
+  server's `PATH` (bundled in the Docker image).
 - **Self-contained** — templates and static assets are embedded via `go:embed`.
 - **Safe by construction** — identifiers are validated and quoted; parameters
   use bound values.

@@ -12,3 +12,4 @@
 # Go
 *.test
 *.out
+scratch_srv.log

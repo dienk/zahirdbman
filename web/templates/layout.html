@@ -11,6 +11,7 @@
     <a class="brand" href="/">zahir<span>dbman</span></a>
     <nav>
       <a href="/">Databases</a>
+      <a href="/backups">Backup &amp; Restore</a>
       {{if .Database}}<a href="/db?name={{.Database}}">{{.Database}}</a>
       <a href="/query?db={{.Database}}">SQL Console</a>{{end}}
     </nav>
