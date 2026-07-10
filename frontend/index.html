@@ -10,46 +10,52 @@
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <header class="top">
-    <img class="logo" src="./zahir-erp-white.png" alt="Zahir ERP">
-    <span class="sub">Data Console</span>
-    <div class="spacer"></div>
-    <div class="api-cfg">
-      <span class="dot" id="dot" title="connection status"></span>
-      <input id="api" type="url" placeholder="https://your-zahirdbman.onrender.com" autocomplete="url" spellcheck="false">
-      <button id="connect" class="btn primary">Connect</button>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand" href="./"><img class="brand-logo" src="./zahir-erp-white.png" alt="Zahir ERP"></a>
+      <nav class="side-nav">
+        <a data-view="db" class="active"><span class="ic">&#9636;</span> <span class="label">Databases</span></a>
+        <a data-view="sql"><span class="ic">&#9000;</span> <span class="label">SQL Console</span></a>
+      </nav>
+      <div class="side-foot">Data Console</div>
+    </aside>
+
+    <div class="main-col">
+      <header class="topbar">
+        <div class="page-title" id="page-title">Databases</div>
+        <div class="topbar-right">
+          <span class="dot" id="dot" title="connection status"></span>
+          <input id="api" type="url" placeholder="https://your-zahirdbman.onrender.com" autocomplete="url" spellcheck="false">
+          <button id="connect" class="btn primary">Connect</button>
+          <div class="avatar" title="Zahir Data Console">Z</div>
+        </div>
+      </header>
+
+      <main class="content">
+        <div id="banner" class="banner" hidden></div>
+
+        <section id="tab-db">
+          <div id="serverinfo"></div>
+          <div class="page-head"><h2>Databases</h2></div>
+          <div id="databases" class="muted">Enter your zahirdbman API URL above and click Connect.</div>
+          <div id="tables"></div>
+        </section>
+
+        <section id="tab-sql" hidden>
+          <div class="page-head"><h2>SQL Console</h2></div>
+          <div class="sql-bar">
+            <input id="qdb" placeholder="database (blank = admin)" spellcheck="false">
+          </div>
+          <textarea id="sql" spellcheck="false" placeholder="SELECT * FROM ..."></textarea>
+          <div class="sql-actions">
+            <button id="run" class="btn primary">Run</button>
+            <span class="muted small">&#8984;/Ctrl + Enter</span>
+          </div>
+          <div id="qresult"></div>
+        </section>
+      </main>
     </div>
-  </header>
-
-  <nav class="tabs">
-    <button data-tab="db" class="active">Databases</button>
-    <button data-tab="sql">SQL Console</button>
-  </nav>
-
-  <main class="wrap">
-    <div id="banner" class="banner" hidden></div>
-
-    <section id="tab-db">
-      <div id="serverinfo"></div>
-      <h2>Databases</h2>
-      <div id="databases" class="muted">Enter your zahirdbman API URL above and click Connect.</div>
-      <div id="tables"></div>
-    </section>
-
-    <section id="tab-sql" hidden>
-      <div class="sql-bar">
-        <input id="qdb" placeholder="database (blank = admin)" spellcheck="false">
-      </div>
-      <textarea id="sql" spellcheck="false" placeholder="SELECT * FROM ..."></textarea>
-      <div class="sql-actions">
-        <button id="run" class="btn primary">Run</button>
-        <span class="muted small">⌘/Ctrl + Enter</span>
-      </div>
-      <div id="qresult"></div>
-    </section>
-  </main>
-
-  <footer class="foot">Zahir Data Console · a static frontend for a zahirdbman API</footer>
+  </div>
   <script src="./app.js"></script>
 </body>
 </html>

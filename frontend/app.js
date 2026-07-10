@@ -123,16 +123,26 @@
     }).catch(function (e) { $("qresult").innerHTML = '<div class="banner err">' + esc(e.message) + "</div>"; });
   }
 
-  // ---- Tabs ----
-  document.querySelectorAll(".tabs button").forEach(function (b) {
-    b.addEventListener("click", function () {
-      document.querySelectorAll(".tabs button").forEach(function (x) { x.classList.remove("active"); });
-      b.classList.add("active");
-      var tab = b.getAttribute("data-tab");
-      $("tab-db").hidden = tab !== "db";
-      $("tab-sql").hidden = tab !== "sql";
+  // ---- Sidebar navigation (deep-linkable via #db / #sql) ----
+  var TITLES = { db: "Databases", sql: "SQL Console" };
+  function showView(view) {
+    if (!TITLES[view]) view = "db";
+    document.querySelectorAll(".side-nav a").forEach(function (x) {
+      x.classList.toggle("active", x.getAttribute("data-view") === view);
+    });
+    $("tab-db").hidden = view !== "db";
+    $("tab-sql").hidden = view !== "sql";
+    $("page-title").textContent = TITLES[view];
+  }
+  document.querySelectorAll(".side-nav a[data-view]").forEach(function (a) {
+    a.addEventListener("click", function () {
+      var view = a.getAttribute("data-view");
+      location.hash = view;
+      showView(view);
     });
   });
+  showView((location.hash || "#db").slice(1));
+  window.addEventListener("hashchange", function () { showView(location.hash.slice(1)); });
 
   $("connect").addEventListener("click", connect);
   apiInput.addEventListener("keydown", function (e) { if (e.key === "Enter") connect(); });
