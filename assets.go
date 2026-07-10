@@ -4,7 +4,9 @@ package zahirdbman
 
 import "embed"
 
-// WebFS holds the HTML templates and static CSS under the web/ directory.
+// WebFS holds the HTML templates and static assets (CSS, images, fonts) under
+// the web/ directory. Naming web/static embeds its whole subtree, including the
+// self-hosted fonts in web/static/fonts.
 //
-//go:embed web/templates/*.html web/static/*
+//go:embed web/templates/*.html web/static
 var WebFS embed.FS
