@@ -19,6 +19,7 @@ databases:
     databaseName: zahirdbman
     postgresMajorVersion: "16"
     plan: free
+    region: oregon
 
 services:
   - type: web
@@ -26,6 +27,7 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free
+    region: oregon
     healthCheckPath: /livez
     autoDeploy: true
     envVars:
