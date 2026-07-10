@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zahir Data Console</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%232479AE'/%3E%3Cpath d='M11 11 H21 L11 21 H21' fill='none' stroke='white' stroke-width='3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="top">
+    <img class="logo" src="./zahir-erp-white.png" alt="Zahir ERP">
+    <span class="sub">Data Console</span>
+    <div class="spacer"></div>
+    <div class="api-cfg">
+      <span class="dot" id="dot" title="connection status"></span>
+      <input id="api" type="url" placeholder="https://your-zahirdbman.onrender.com" autocomplete="url" spellcheck="false">
+      <button id="connect" class="btn primary">Connect</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="db" class="active">Databases</button>
+    <button data-tab="sql">SQL Console</button>
+  </nav>
+
+  <main class="wrap">
+    <div id="banner" class="banner" hidden></div>
+
+    <section id="tab-db">
+      <div id="serverinfo"></div>
+      <h2>Databases</h2>
+      <div id="databases" class="muted">Enter your zahirdbman API URL above and click Connect.</div>
+      <div id="tables"></div>
+    </section>
+
+    <section id="tab-sql" hidden>
+      <div class="sql-bar">
+        <input id="qdb" placeholder="database (blank = admin)" spellcheck="false">
+      </div>
+      <textarea id="sql" spellcheck="false" placeholder="SELECT * FROM ..."></textarea>
+      <div class="sql-actions">
+        <button id="run" class="btn primary">Run</button>
+        <span class="muted small">⌘/Ctrl + Enter</span>
+      </div>
+      <div id="qresult"></div>
+    </section>
+  </main>
+
+  <footer class="foot">Zahir Data Console · a static frontend for a zahirdbman API</footer>
+  <script src="./app.js"></script>
+</body>
+</html>

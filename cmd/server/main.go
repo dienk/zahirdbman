@@ -73,9 +73,12 @@ func main() {
 		log.Fatalf("init handler: %v", err)
 	}
 
+	if cfg.CORSOrigin != "" {
+		log.Printf("JSON API CORS enabled for origin %q", cfg.CORSOrigin)
+	}
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           logRequests(h.Routes()),
+		Handler:           logRequests(corsMiddleware(cfg.CORSOrigin, h.Routes())),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
@@ -97,6 +100,26 @@ func main() {
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Printf("shutdown error: %v", err)
 	}
+}
+
+// corsMiddleware adds CORS headers for the configured origin so a browser
+// frontend (e.g. on Vercel) can call the JSON API. When origin is empty it is a
+// no-op, so cross-origin API access stays disabled by default.
+func corsMiddleware(origin string, next http.Handler) http.Handler {
+	if origin == "" {
+		return next
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Add("Vary", "Origin")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // logRequests is a minimal access-log middleware.

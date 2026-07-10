@@ -69,6 +69,10 @@ func (h *Handler) Routes() *http.ServeMux {
 	mux.HandleFunc("/connections/save", h.connSave)
 	mux.HandleFunc("/connections/activate", h.connActivate)
 	mux.HandleFunc("/connections/delete", h.connDelete)
+	mux.HandleFunc("/api/server", h.apiServer)
+	mux.HandleFunc("/api/databases", h.apiDatabases)
+	mux.HandleFunc("/api/tables", h.apiTables)
+	mux.HandleFunc("/api/query", h.apiQuery)
 	mux.HandleFunc("/livez", h.livez)
 	mux.HandleFunc("/healthz", h.healthz)
 	return mux

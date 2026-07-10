@@ -124,6 +124,23 @@ Notes:
 The same image runs on any Docker host (Fly.io, Railway, a VPS); set `PORT`
 and/or `DATABASE_URL` (or the individual `PG*` variables) accordingly.
 
+## JSON API and Vercel frontend
+
+zahirdbman also exposes a small JSON API for external clients:
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/server` | version, uptime and active connection |
+| `GET /api/databases` | list databases |
+| `GET /api/tables?db=` | list tables/views in a database |
+| `POST /api/query` | run SQL (`{"db":"...","sql":"..."}`) |
+
+Cross-origin access is **off by default**; set `ZDBM_CORS_ORIGIN` to a browser
+origin (e.g. a Vercel URL) to allow it. A ready-made static frontend that
+consumes this API lives in [`frontend/`](frontend/) and deploys to Vercel — see
+its README. Because `/api/query` runs arbitrary SQL and the app has no login,
+only expose the API behind authentication or a trusted network.
+
 ## Project layout
 
 ```

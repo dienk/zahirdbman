@@ -135,9 +135,9 @@ func (m *Manager) ServerVersion(ctx context.Context) (string, error) {
 
 // ServerInfo holds descriptive facts about the connected server.
 type ServerInfo struct {
-	Full      string    // the raw version() string
-	Version   string    // short version, e.g. "14.20"
-	StartedAt time.Time // postmaster start time
+	Full      string    `json:"full"`      // the raw version() string
+	Version   string    `json:"version"`   // short version, e.g. "14.20"
+	StartedAt time.Time `json:"startedAt"` // postmaster start time
 }
 
 // ServerInfo returns version and uptime details for the connected server.
@@ -161,10 +161,10 @@ func (m *Manager) ServerInfo(ctx context.Context) (ServerInfo, error) {
 
 // Database describes a single database and its size.
 type Database struct {
-	Name    string
-	Owner   string
-	Size    string
-	SizeRaw int64
+	Name    string `json:"name"`
+	Owner   string `json:"owner"`
+	Size    string `json:"size"`
+	SizeRaw int64  `json:"sizeRaw"`
 }
 
 // ListDatabases returns non-template databases ordered by name.
@@ -200,11 +200,11 @@ func (m *Manager) ListDatabases(ctx context.Context) ([]Database, error) {
 
 // Table describes a table or view within a schema.
 type Table struct {
-	Schema   string
-	Name     string
-	Kind     string // "table" or "view"
-	Rows     int64  // estimated live rows
-	Size     string
+	Schema string `json:"schema"`
+	Name   string `json:"name"`
+	Kind   string `json:"kind"` // "table" or "view"
+	Rows   int64  `json:"rows"` // estimated live rows
+	Size   string `json:"size"`
 }
 
 // ListTables returns user tables/views in the given database, excluding the
@@ -289,9 +289,9 @@ func (m *Manager) TableColumns(ctx context.Context, database, schema, table stri
 
 // Result is a generic tabular query result.
 type Result struct {
-	Columns  []string
-	Rows     [][]string
-	RowCount int
+	Columns  []string   `json:"columns"`
+	Rows     [][]string `json:"rows"`
+	RowCount int        `json:"rowCount"`
 }
 
 // PreviewTable returns up to limit rows of schema.table. Identifiers are

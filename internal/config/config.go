@@ -28,6 +28,10 @@ type Config struct {
 
 	// ProfilesFile is where connection profiles are persisted as JSON.
 	ProfilesFile string
+
+	// CORSOrigin, when set, enables the JSON API for that browser origin
+	// (e.g. a Vercel frontend URL). Empty disables cross-origin API access.
+	CORSOrigin string
 }
 
 // WithConn returns a copy of c whose PostgreSQL connection fields are replaced.
@@ -68,6 +72,7 @@ func Load() Config {
 		PGSSLMode:     "prefer",
 		AdminDatabase: "postgres",
 		ProfilesFile:  env("ZDBM_PROFILES", defaultProfilesPath()),
+		CORSOrigin:    env("ZDBM_CORS_ORIGIN", ""),
 	}
 	if raw := firstNonEmpty(os.Getenv("DATABASE_URL"), os.Getenv("ZDBM_DATABASE_URL")); raw != "" {
 		applyDatabaseURL(&c, raw)
