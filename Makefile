@@ -2,7 +2,9 @@ BINARY := bin/zahirdbman
 PKG := ./cmd/server
 IMAGE := zahirdbman:latest
 
-.PHONY: run build tidy test clean docker-build docker-run up down
+VERSION ?= 0.1.0
+
+.PHONY: run build tidy test clean docker-build docker-run up down installers
 
 run:
 	go run $(PKG)
@@ -17,7 +19,11 @@ test:
 	go test ./...
 
 clean:
-	rm -rf bin
+	rm -rf bin dist build
+
+# Build macOS .pkg, Ubuntu .deb and Windows .zip installers into dist/.
+installers:
+	./scripts/build-installers.sh $(VERSION)
 
 docker-build:
 	docker build -t $(IMAGE) .

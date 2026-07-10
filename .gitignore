@@ -3,6 +3,10 @@
 /zahirdbman
 *.exe
 
+# Installer build output
+/dist/
+/build/
+
 # Env
 .env
 

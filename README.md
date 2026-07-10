@@ -61,6 +61,35 @@ make build      # produces bin/zahirdbman
 ./bin/zahirdbman
 ```
 
+## Installers (macOS, Ubuntu, Windows)
+
+Prebuilt installers package the backend as a native app per platform. Build them
+all from a Mac with:
+
+```sh
+make installers            # or: ./scripts/build-installers.sh 0.2.0
+# artifacts land in dist/ with a SHA256SUMS.txt
+```
+
+| Platform | Artifact | Installs |
+|----------|----------|----------|
+| macOS (Intel + Apple Silicon) | `zahirdbman-<ver>-macos.pkg` | universal binary → `/usr/local/bin/zahirdbman` |
+| Ubuntu / Debian | `zahirdbman_<ver>_amd64.deb` | `/usr/bin/zahirdbman` + a systemd service (disabled) |
+| Windows (x64) | `zahirdbman-<ver>-windows-amd64.zip` | `zahirdbman.exe` + `install.ps1` |
+
+Installing:
+
+- **macOS:** double-click the `.pkg`. Unsigned, so first time: right-click →
+  Open, or `System Settings → Privacy & Security → Open Anyway`.
+- **Ubuntu:** `sudo apt install ./zahirdbman_<ver>_amd64.deb` (pulls in
+  `postgresql-client` for Backup/Restore). Then configure
+  `/etc/zahirdbman/zahirdbman.env` and `sudo systemctl enable --now zahirdbman`.
+- **Windows:** unzip, then right-click `install.ps1` → *Run with PowerShell*
+  (adds `zahirdbman` to your PATH). Run `zahirdbman` and open
+  <http://localhost:8080>.
+
+Check the running version with `zahirdbman --version`.
+
 ## Docker
 
 The app builds to a static binary and ships in a minimal distroless image.

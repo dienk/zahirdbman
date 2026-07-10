@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -19,9 +20,21 @@ import (
 	"github.com/zahir/zahirdbman/internal/store"
 )
 
+// version is set at build time via -ldflags "-X main.version=...".
+var version = "dev"
+
 func main() {
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "version", "-version", "--version", "-v":
+			fmt.Println("zahirdbman", version)
+			return
+		}
+	}
+
 	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
 	log.SetPrefix("zahirdbman ")
+	log.Printf("zahirdbman %s starting", version)
 
 	cfg := config.Load()
 
