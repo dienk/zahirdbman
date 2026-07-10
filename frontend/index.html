@@ -15,6 +15,7 @@
       <a class="brand" href="./"><img class="brand-logo" src="./zahir-erp-white.png" alt="Zahir ERP"></a>
       <nav class="side-nav">
         <a data-view="db" class="active"><span class="ic">&#9636;</span> <span class="label">Databases</span></a>
+        <a data-view="conn"><span class="ic">&#128268;</span> <span class="label">Connections</span></a>
         <a data-view="sql"><span class="ic">&#9000;</span> <span class="label">SQL Console</span></a>
       </nav>
       <div class="side-foot">Data Console</div>
@@ -41,6 +42,14 @@
           <div id="tables"></div>
         </section>
 
+        <section id="tab-conn" hidden>
+          <div class="page-head row">
+            <h2>Connections</h2>
+            <button class="btn primary" id="conn-add">+ Add connection</button>
+          </div>
+          <div id="conn-list" class="muted">Connect to the API to load profiles.</div>
+        </section>
+
         <section id="tab-sql" hidden>
           <div class="page-head"><h2>SQL Console</h2></div>
           <div class="sql-bar">
@@ -56,6 +65,41 @@
       </main>
     </div>
   </div>
+
+  <dialog id="conn-dialog" class="modal">
+    <form id="conn-form" class="modal-card">
+      <div class="modal-head">
+        <h3>Add connection</h3>
+        <button type="button" class="modal-x" id="conn-x" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label>Profile name <input name="name" placeholder="e.g. Production" required></label>
+        <div class="grid2">
+          <label>Host <input name="host" value="localhost" required></label>
+          <label>Port <input name="port" value="5432" required></label>
+        </div>
+        <div class="grid2">
+          <label>User <input name="user" value="postgres" required></label>
+          <label>Password <input name="password" type="password" autocomplete="new-password"></label>
+        </div>
+        <div class="grid2">
+          <label>Admin database <input name="adminDB" value="postgres"></label>
+          <label>SSL mode
+            <select name="sslmode">
+              <option>prefer</option><option>disable</option><option>require</option>
+              <option>verify-ca</option><option>verify-full</option>
+            </select>
+          </label>
+        </div>
+        <label class="chk"><input type="checkbox" name="activate" checked> Connect to this profile after saving</label>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn" id="conn-cancel">Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="./app.js"></script>
 </body>
 </html>

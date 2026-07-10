@@ -4,6 +4,7 @@ package handler
 import (
 	"context"
 	"embed"
+	"fmt"
 	"html/template"
 	"io/fs"
 	"log"
@@ -73,6 +74,10 @@ func (h *Handler) Routes() *http.ServeMux {
 	mux.HandleFunc("/api/databases", h.apiDatabases)
 	mux.HandleFunc("/api/tables", h.apiTables)
 	mux.HandleFunc("/api/query", h.apiQuery)
+	mux.HandleFunc("/api/connections", h.apiConnections)
+	mux.HandleFunc("/api/connections/save", h.apiConnSave)
+	mux.HandleFunc("/api/connections/activate", h.apiConnActivate)
+	mux.HandleFunc("/api/connections/delete", h.apiConnDelete)
 	mux.HandleFunc("/livez", h.livez)
 	mux.HandleFunc("/healthz", h.healthz)
 	return mux
@@ -414,28 +419,34 @@ func (h *Handler) connActivate(w http.ResponseWriter, r *http.Request) {
 	h.activateProfile(w, r, r.FormValue("name"))
 }
 
-// activateProfile tests the profile, and on success reconfigures the manager
+// doActivate tests the named profile and, on success, reconfigures the manager
 // and marks it active. On failure the active connection is left unchanged.
-func (h *Handler) activateProfile(w http.ResponseWriter, r *http.Request, name string) {
+// Shared by the HTML and JSON handlers.
+func (h *Handler) doActivate(ctx context.Context, name string) error {
 	p, ok := h.profiles.Get(name)
 	if !ok {
-		http.Redirect(w, r, "/connections?err="+urlq("profile not found: "+name), http.StatusSeeOther)
-		return
+		return fmt.Errorf("profile not found: %s", name)
 	}
 	cfg := h.baseCfg.WithConn(p.Host, p.Port, p.User, p.Password, p.SSLMode, p.AdminDB)
-
-	c, cancel := context.WithTimeout(r.Context(), 8*time.Second)
-	defer cancel()
-	if _, err := store.Test(c, cfg); err != nil {
-		http.Redirect(w, r, "/connections?err="+urlq("cannot connect to "+name+": "+err.Error()), http.StatusSeeOther)
-		return
+	if _, err := store.Test(ctx, cfg); err != nil {
+		return fmt.Errorf("cannot connect to %s: %w", name, err)
 	}
 	h.mgr.Reconfigure(cfg)
 	if _, err := h.profiles.SetActive(name); err != nil {
+		return err
+	}
+	log.Printf("active connection switched to %q (%s:%s)", name, p.Host, p.Port)
+	return nil
+}
+
+// activateProfile is the HTML wrapper around doActivate.
+func (h *Handler) activateProfile(w http.ResponseWriter, r *http.Request, name string) {
+	c, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+	defer cancel()
+	if err := h.doActivate(c, name); err != nil {
 		http.Redirect(w, r, "/connections?err="+urlq(err.Error()), http.StatusSeeOther)
 		return
 	}
-	log.Printf("active connection switched to %q (%s:%s)", name, p.Host, p.Port)
 	http.Redirect(w, r, "/connections?flash="+urlq("Connected: "+name), http.StatusSeeOther)
 }
 

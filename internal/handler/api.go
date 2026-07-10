@@ -1,8 +1,12 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"time"
+
+	"github.com/zahir/zahirdbman/internal/profile"
 )
 
 // The /api/* endpoints return JSON for external clients such as the Vercel
@@ -68,6 +72,102 @@ func (h *Handler) apiTables(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"tables": tables})
+}
+
+// connView is a profile as returned to clients — without the password.
+type connView struct {
+	Name    string `json:"name"`
+	Host    string `json:"host"`
+	Port    string `json:"port"`
+	User    string `json:"user"`
+	AdminDB string `json:"adminDB"`
+	SSLMode string `json:"sslmode"`
+	Active  bool   `json:"active"`
+}
+
+// apiConnections lists the saved connection profiles (passwords omitted).
+func (h *Handler) apiConnections(w http.ResponseWriter, r *http.Request) {
+	active := h.profiles.ActiveName()
+	var out []connView
+	for _, p := range h.profiles.List() {
+		out = append(out, connView{
+			Name: p.Name, Host: p.Host, Port: p.Port, User: p.User,
+			AdminDB: p.AdminDB, SSLMode: p.SSLMode, Active: p.Name == active,
+		})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"connections": out, "active": active})
+}
+
+// apiConnSave creates or updates a profile, optionally activating it.
+func (h *Handler) apiConnSave(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeAPIErr(w, http.StatusMethodNotAllowed, "use POST")
+		return
+	}
+	var req struct {
+		profile.Profile
+		Activate bool `json:"activate"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
+		writeAPIErr(w, http.StatusBadRequest, "invalid JSON body: "+err.Error())
+		return
+	}
+	if err := h.profiles.Upsert(req.Profile); err != nil {
+		writeAPIErr(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if req.Activate {
+		c, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+		defer cancel()
+		if err := h.doActivate(c, req.Name); err != nil {
+			// Saved, but couldn't connect — report as a soft error.
+			writeJSON(w, http.StatusOK, map[string]any{"saved": true, "activated": false, "error": err.Error()})
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"saved": true, "activated": req.Activate})
+}
+
+// apiConnActivate switches the active connection to the named profile.
+func (h *Handler) apiConnActivate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeAPIErr(w, http.StatusMethodNotAllowed, "use POST")
+		return
+	}
+	var req struct {
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&req); err != nil {
+		writeAPIErr(w, http.StatusBadRequest, "invalid JSON body: "+err.Error())
+		return
+	}
+	c, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+	defer cancel()
+	if err := h.doActivate(c, req.Name); err != nil {
+		writeAPIErr(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"active": req.Name})
+}
+
+// apiConnDelete removes a profile.
+func (h *Handler) apiConnDelete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeAPIErr(w, http.StatusMethodNotAllowed, "use POST")
+		return
+	}
+	var req struct {
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&req); err != nil {
+		writeAPIErr(w, http.StatusBadRequest, "invalid JSON body: "+err.Error())
+		return
+	}
+	if err := h.profiles.Delete(req.Name); err != nil {
+		writeAPIErr(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"deleted": req.Name})
 }
 
 // apiQuery runs a SQL statement against a database.
