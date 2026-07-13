@@ -25,13 +25,29 @@
   function baseURL() { return base.replace(/\/+$/, ""); }
   function jsonPost(obj) { return { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(obj) }; }
 
+  // fetchFailHint turns a bare "Failed to fetch" (network / CORS / mixed-content
+  // / private-network block) into an actionable message.
+  function fetchFailHint() {
+    var pageHttps = location.protocol === "https:";
+    var isHttp = /^http:\/\//i.test(base);
+    var isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|\[?::1)/i.test(base);
+    if (pageHttps && isLocal)
+      return "Can't reach a localhost backend from this HTTPS page — browsers block public→private-network requests. Run the console locally, or deploy the backend over HTTPS.";
+    if (pageHttps && isHttp)
+      return "This page is HTTPS but the API URL is HTTP, which the browser blocks (mixed content). Use an https:// backend URL.";
+    return "Couldn't reach the API at " + base + ". Check the URL is correct and the backend is running, and that it allows this site via ZDBM_CORS_ORIGIN=" + location.origin + " (a CORS block also shows as “Failed to fetch”).";
+  }
+
   function api(path, opts) {
-    if (!base) return Promise.reject(new Error("Set the API URL first."));
+    if (!base) return Promise.reject(new Error("Set the API URL in the top bar, then click Connect."));
     return fetch(baseURL() + path, opts).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (body) {
         if (!r.ok) throw new Error(body.error || (r.status + " " + r.statusText));
         return body;
       });
+    }, function () {
+      // fetch itself rejected (no response reached the browser).
+      throw new Error(fetchFailHint());
     });
   }
 

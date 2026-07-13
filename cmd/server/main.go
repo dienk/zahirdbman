@@ -128,6 +128,11 @@ func corsMiddleware(origin string, next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		if r.Method == http.MethodOptions {
+			// Private Network Access: allow a public HTTPS page (e.g. Vercel) to
+			// reach this backend when it is on localhost / a private network.
+			if r.Header.Get("Access-Control-Request-Private-Network") == "true" {
+				w.Header().Set("Access-Control-Allow-Private-Network", "true")
+			}
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
