@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/zahir/zahirdbman/internal/backup"
 	"github.com/zahir/zahirdbman/internal/profile"
 )
 
@@ -42,6 +43,8 @@ func (h *Handler) apiServer(w http.ResponseWriter, r *http.Request) {
 			"user":    ci.User,
 			"adminDB": ci.AdminDB,
 		},
+		// Whether pg_dump/pg_restore/psql are available (Backup & Restore).
+		"toolsAvailable": h.tools.Available(),
 	})
 }
 
@@ -55,6 +58,77 @@ func (h *Handler) apiDatabases(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"databases": dbs})
+}
+
+// apiServerTools augments server info with whether the psql client tools are
+// present (used by the frontend to enable Backup & Restore). Kept separate to
+// avoid changing apiServer's shape unexpectedly is unnecessary; folded in below.
+
+// apiCreateDatabase creates a database. Body: {"name":"..."}.
+func (h *Handler) apiCreateDatabase(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeAPIErr(w, http.StatusMethodNotAllowed, "use POST")
+		return
+	}
+	var req struct {
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&req); err != nil {
+		writeAPIErr(w, http.StatusBadRequest, "invalid JSON body: "+err.Error())
+		return
+	}
+	c, cancel := ctx(r)
+	defer cancel()
+	if err := h.mgr.CreateDatabase(c, req.Name); err != nil {
+		writeAPIErr(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"created": req.Name})
+}
+
+// apiDropDatabase drops a database. Body: {"name":"..."}.
+func (h *Handler) apiDropDatabase(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeAPIErr(w, http.StatusMethodNotAllowed, "use POST")
+		return
+	}
+	var req struct {
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&req); err != nil {
+		writeAPIErr(w, http.StatusBadRequest, "invalid JSON body: "+err.Error())
+		return
+	}
+	c, cancel := ctx(r)
+	defer cancel()
+	if err := h.mgr.DropDatabase(c, req.Name); err != nil {
+		writeAPIErr(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"dropped": req.Name})
+}
+
+// apiTable returns a table's columns and a preview of its rows.
+func (h *Handler) apiTable(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	db, schema, name := q.Get("db"), q.Get("schema"), q.Get("name")
+	if db == "" || schema == "" || name == "" {
+		writeAPIErr(w, http.StatusBadRequest, "db, schema and name are required")
+		return
+	}
+	c, cancel := ctx(r)
+	defer cancel()
+	cols, err := h.mgr.TableColumns(c, db, schema, name)
+	if err != nil {
+		writeAPIErr(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	preview, err := h.mgr.PreviewTable(c, db, schema, name, 100)
+	if err != nil {
+		writeAPIErr(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"columns": cols, "preview": preview})
 }
 
 // apiTables lists tables/views in ?db=NAME.
@@ -72,6 +146,49 @@ func (h *Handler) apiTables(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"tables": tables})
+}
+
+// apiRestore loads an uploaded dump into a target database. multipart form:
+// dump (file), target, format (custom|plain), create/clean/no_owner (on|"").
+func (h *Handler) apiRestore(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeAPIErr(w, http.StatusMethodNotAllowed, "use POST")
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 512<<20)
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		writeAPIErr(w, http.StatusBadRequest, "upload too large or malformed: "+err.Error())
+		return
+	}
+	target := r.FormValue("target")
+	format := backup.FormatCustom
+	if r.FormValue("format") == string(backup.FormatPlain) {
+		format = backup.FormatPlain
+	}
+	opts := backup.RestoreOptions{
+		Clean:   r.FormValue("clean") == "on",
+		NoOwner: r.FormValue("no_owner") == "on",
+	}
+	file, _, err := r.FormFile("dump")
+	if err != nil {
+		writeAPIErr(w, http.StatusBadRequest, "no dump file provided")
+		return
+	}
+	defer file.Close()
+
+	c, cancel := context.WithTimeout(r.Context(), 30*time.Minute)
+	defer cancel()
+	if r.FormValue("create") == "on" {
+		if err := h.mgr.CreateDatabase(c, target); err != nil {
+			writeAPIErr(w, http.StatusBadRequest, "create target: "+err.Error())
+			return
+		}
+	}
+	if err := h.tools.Restore(c, target, format, file, opts); err != nil {
+		writeAPIErr(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"restored": target})
 }
 
 // connView is a profile as returned to clients — without the password.
@@ -111,6 +228,13 @@ func (h *Handler) apiConnSave(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
 		writeAPIErr(w, http.StatusBadRequest, "invalid JSON body: "+err.Error())
 		return
+	}
+	// Editing: a blank password keeps the existing one (the list never exposes
+	// passwords, so the client can't resend it).
+	if req.Password == "" {
+		if existing, ok := h.profiles.Get(req.Name); ok {
+			req.Password = existing.Password
+		}
 	}
 	if err := h.profiles.Upsert(req.Profile); err != nil {
 		writeAPIErr(w, http.StatusBadRequest, err.Error())

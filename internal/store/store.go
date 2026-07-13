@@ -246,10 +246,10 @@ func (m *Manager) ListTables(ctx context.Context, database string) ([]Table, err
 
 // Column describes one column of a table.
 type Column struct {
-	Name     string
-	Type     string
-	Nullable bool
-	Default  string
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Nullable bool   `json:"nullable"`
+	Default  string `json:"default"`
 }
 
 // TableColumns returns the columns of schema.table in definition order.

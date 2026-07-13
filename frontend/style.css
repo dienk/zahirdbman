@@ -65,6 +65,21 @@ h2:first-child { margin-top: 0; }
 
 .banner { padding: 0.7rem 1rem; border-radius: 10px; margin-bottom: 1rem; font-weight: 600; }
 .banner.err { background: color-mix(in srgb, var(--danger) 10%, #fff); color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--border)); }
+.banner.ok { background: #E6F6EF; color: #05966A; border: 1px solid #a7f3d0; }
+.strong { font-weight: 600; }
+
+/* ---- Backup & Restore cards ---- */
+.cards2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.25rem; }
+.card h3 { margin: 0 0 0.25rem; font-size: 1.02rem; }
+.stack { display: flex; flex-direction: column; gap: 0.85rem; margin-top: 0.75rem; }
+.stack label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; font-weight: 600; }
+.stack select, .stack input[type=text], .stack input[type=file], .stack input:not([type]) {
+  padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--ink); font-size: 0.9rem; font-family: var(--sans);
+}
+.stack select:focus, .stack input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(36,121,174,.15); }
+.checks { display: flex; flex-direction: column; gap: 0.45rem; }
+.checks .chk { flex-direction: row; align-items: center; gap: 0.5rem; font-weight: 400; color: var(--muted); }
+.checks .chk input { width: auto; }
 
 .btn {
   display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; font-family: var(--sans);

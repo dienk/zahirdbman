@@ -6,13 +6,21 @@ at your zahirdbman URL at runtime (stored in the browser).
 
 ## What it does
 
-- Enter your zahirdbman API base URL (top bar) — saved in `localStorage`.
-- **Databases** tab: server version + connection, the list of databases, and
-  the tables/views inside any database.
-- **SQL Console** tab: run a query against a chosen database and view results.
+Feature parity with the main app, over the JSON API:
 
-It uses these API endpoints (added to zahirdbman): `GET /api/server`,
-`GET /api/databases`, `GET /api/tables?db=`, `POST /api/query`.
+- Enter your zahirdbman API base URL (top bar) — saved in `localStorage`.
+- **Databases**: server info, database list, **+ New database**, **Drop**, and
+  drill into a database → tables → a table's columns + row preview.
+- **Backup & Restore**: download a `pg_dump` of a database, and restore an
+  uploaded dump into a target (create / clean / ignore-ownership options).
+- **Connections**: create, edit, activate and delete connection profiles.
+- **SQL Console**: run a query against a chosen database.
+
+API endpoints used (all added to zahirdbman): `GET /api/server`,
+`GET /api/databases`, `POST /api/databases/create`, `POST /api/databases/drop`,
+`GET /api/tables?db=`, `GET /api/table?db=&schema=&name=`, `POST /api/query`,
+`GET /backup?db=&format=` (download), `POST /api/restore` (multipart),
+`GET /api/connections`, `POST /api/connections/{save,activate,delete}`.
 
 ## Deploy to Vercel
 

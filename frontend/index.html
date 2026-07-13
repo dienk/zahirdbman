@@ -15,6 +15,7 @@
       <a class="brand" href="./"><img class="brand-logo" src="./zahir-erp-white.png" alt="Zahir ERP"></a>
       <nav class="side-nav">
         <a data-view="db" class="active"><span class="ic">&#9636;</span> <span class="label">Databases</span></a>
+        <a data-view="backup"><span class="ic">&#8681;</span> <span class="label">Backup &amp; Restore</span></a>
         <a data-view="conn"><span class="ic">&#128268;</span> <span class="label">Connections</span></a>
         <a data-view="sql"><span class="ic">&#9000;</span> <span class="label">SQL Console</span></a>
       </nav>
@@ -35,13 +36,59 @@
       <main class="content">
         <div id="banner" class="banner" hidden></div>
 
+        <!-- Databases -->
         <section id="tab-db">
           <div id="serverinfo"></div>
-          <div class="page-head"><h2>Databases</h2></div>
+          <div class="page-head row">
+            <h2>Databases</h2>
+            <button class="btn primary" id="db-add">+ New database</button>
+          </div>
           <div id="databases" class="muted">Enter your zahirdbman API URL above and click Connect.</div>
           <div id="tables"></div>
+          <div id="tabledetail"></div>
         </section>
 
+        <!-- Backup & Restore -->
+        <section id="tab-backup" hidden>
+          <div class="page-head"><h2>Backup &amp; Restore</h2></div>
+          <div id="backup-warn"></div>
+          <div class="cards2">
+            <section class="card">
+              <h3>Backup a database</h3>
+              <p class="muted small">Runs pg_dump and downloads the archive.</p>
+              <div class="stack">
+                <label>Database <select id="bk-db"></select></label>
+                <label>Format
+                  <select id="bk-format">
+                    <option value="custom">Custom (.dump)</option>
+                    <option value="plain">Plain SQL (.sql)</option>
+                  </select>
+                </label>
+                <button class="btn primary" id="bk-download">Download backup</button>
+              </div>
+            </section>
+            <section class="card">
+              <h3>Restore a dump</h3>
+              <p class="muted small">Uploads a dump and loads it. Max 512&nbsp;MiB.</p>
+              <form id="rs-form" class="stack">
+                <label>Dump file <input type="file" name="dump" required></label>
+                <label>Format
+                  <select name="format"><option value="custom">Custom (.dump)</option><option value="plain">Plain SQL (.sql)</option></select>
+                </label>
+                <label>Target database <input name="target" placeholder="database_name" required></label>
+                <div class="checks">
+                  <label class="chk"><input type="checkbox" name="create"> Create target database first</label>
+                  <label class="chk"><input type="checkbox" name="clean" checked> Clean existing objects (custom only)</label>
+                  <label class="chk"><input type="checkbox" name="no_owner"> Ignore ownership</label>
+                </div>
+                <button class="btn danger" type="submit">Restore</button>
+              </form>
+              <div id="rs-result"></div>
+            </section>
+          </div>
+        </section>
+
+        <!-- Connections -->
         <section id="tab-conn" hidden>
           <div class="page-head row">
             <h2>Connections</h2>
@@ -50,11 +97,10 @@
           <div id="conn-list" class="muted">Connect to the API to load profiles.</div>
         </section>
 
+        <!-- SQL Console -->
         <section id="tab-sql" hidden>
           <div class="page-head"><h2>SQL Console</h2></div>
-          <div class="sql-bar">
-            <input id="qdb" placeholder="database (blank = admin)" spellcheck="false">
-          </div>
+          <div class="sql-bar"><input id="qdb" placeholder="database (blank = admin)" spellcheck="false"></div>
           <textarea id="sql" spellcheck="false" placeholder="SELECT * FROM ..."></textarea>
           <div class="sql-actions">
             <button id="run" class="btn primary">Run</button>
@@ -66,12 +112,22 @@
     </div>
   </div>
 
+  <!-- New database modal -->
+  <dialog id="db-dialog" class="modal">
+    <form id="db-form" class="modal-card">
+      <div class="modal-head"><h3>New database</h3><button type="button" class="modal-x" id="db-x" aria-label="Close">&times;</button></div>
+      <div class="modal-body">
+        <label>Database name <input name="name" placeholder="database_name" pattern="[A-Za-z0-9_]+" required></label>
+        <p class="muted small">Letters, numbers and underscores only.</p>
+      </div>
+      <div class="modal-foot"><button type="button" class="btn" id="db-cancel">Cancel</button><button type="submit" class="btn primary">Create database</button></div>
+    </form>
+  </dialog>
+
+  <!-- Add / edit connection modal -->
   <dialog id="conn-dialog" class="modal">
     <form id="conn-form" class="modal-card">
-      <div class="modal-head">
-        <h3>Add connection</h3>
-        <button type="button" class="modal-x" id="conn-x" aria-label="Close">&times;</button>
-      </div>
+      <div class="modal-head"><h3 id="conn-modal-title">Add connection</h3><button type="button" class="modal-x" id="conn-x" aria-label="Close">&times;</button></div>
       <div class="modal-body">
         <label>Profile name <input name="name" placeholder="e.g. Production" required></label>
         <div class="grid2">
@@ -85,18 +141,12 @@
         <div class="grid2">
           <label>Admin database <input name="adminDB" value="postgres"></label>
           <label>SSL mode
-            <select name="sslmode">
-              <option>prefer</option><option>disable</option><option>require</option>
-              <option>verify-ca</option><option>verify-full</option>
-            </select>
+            <select name="sslmode"><option>prefer</option><option>disable</option><option>require</option><option>verify-ca</option><option>verify-full</option></select>
           </label>
         </div>
         <label class="chk"><input type="checkbox" name="activate" checked> Connect to this profile after saving</label>
       </div>
-      <div class="modal-foot">
-        <button type="button" class="btn" id="conn-cancel">Cancel</button>
-        <button type="submit" class="btn primary">Save</button>
-      </div>
+      <div class="modal-foot"><button type="button" class="btn" id="conn-cancel">Cancel</button><button type="submit" class="btn primary" id="conn-submit">Save</button></div>
     </form>
   </dialog>
 
